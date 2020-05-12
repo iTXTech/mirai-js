@@ -29,6 +29,7 @@ dependencies {
     implementation("net.mamoe:mirai-console:0.5.1")
 
     implementation("org.mozilla:rhino:1.7.12")
+    implementation("com.squareup.okhttp3:okhttp:4.6.0")
 }
 
 tasks.named<Jar>("jar") {
@@ -39,9 +40,11 @@ tasks.named<Jar>("jar") {
     }
 
     val list = ArrayList<Any>()
-    configurations.compileClasspath.get().forEach {
-        if (it.absolutePath.contains("rhino")) {
-            list.add(zipTree(it))
+    configurations.compileClasspath.get().forEach { file ->
+        arrayOf("rhino", "squareup").forEach {
+            if (file.absolutePath.contains(it)) {
+                list.add(zipTree(file))
+            }
         }
     }
 

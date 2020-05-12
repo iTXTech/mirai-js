@@ -27,4 +27,6 @@ package org.itxtech.miraijs.bridge
 class PluginEvent {
     var onLoad: Runnable? = null
     var onEnable: Runnable? = null
+    var onDisable: Runnable? = null
+    var onUnload: Runnable? = null
 }

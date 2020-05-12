@@ -57,4 +57,10 @@ object PluginManager {
             it.enable()
         }
     }
+
+    fun disablePlugins() {
+        plugins.forEach {
+            it.disable()
+        }
+    }
 }

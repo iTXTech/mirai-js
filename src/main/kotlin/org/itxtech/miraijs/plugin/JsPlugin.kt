@@ -35,29 +35,33 @@ import java.util.concurrent.Executors
 import kotlin.coroutines.ContinuationInterceptor
 
 data class JsPlugin(val file: File) {
+    var enabled = false
     lateinit var dispatcher: PluginDispatcher
     lateinit var cx: Context
     lateinit var script: Script
     lateinit var scope: ImporterTopLevel
     lateinit var pluginInfo: PluginInfo
     private val pluginEvent = PluginEvent()
-    private val coreEvent = CoreEvent(this)
+    private val coreEvent = CoreEvent()
 
-    fun launch(b: suspend CoroutineScope.() -> Unit) {
+    private fun launch(b: suspend CoroutineScope.() -> Unit) {
         MiraiJs.launch(context = dispatcher, block = b)
     }
 
     private fun loadLibs() {
+        ScriptableObject.putProperty(scope, "plugin", Context.javaToJS(this, scope))
         ScriptableObject.putProperty(scope, "logger", Context.javaToJS(PluginLogger(this), scope))
-        ScriptableObject.putProperty(scope, "pluginEvent", Context.javaToJS(pluginEvent, scope))
-        ScriptableObject.putProperty(scope, "coreEvent", Context.javaToJS(coreEvent, scope))
+        ScriptableObject.putProperty(scope, "pluginEv", Context.javaToJS(pluginEvent, scope))
+        ScriptableObject.putProperty(scope, "coreEv", Context.javaToJS(coreEvent, scope))
         ScriptableObject.putProperty(scope, "bots", Context.javaToJS(BotUtil, scope))
         ScriptableObject.putProperty(scope, "co", Context.javaToJS(CoroutineUtil, scope))
+        ScriptableObject.putProperty(scope, "http", Context.javaToJS(HttpUtil, scope))
         cx.evaluateString(
             scope, """
             importPackage(net.mamoe.mirai.event.events)
             importPackage(net.mamoe.mirai.message)
             importPackage(net.mamoe.mirai.message.data)
+            importPackage(java.util.concurrent)
         """.trimIndent(), "importMirai", 1, null
         )
     }
@@ -94,10 +98,21 @@ data class JsPlugin(val file: File) {
     }
 
     fun enable() = launch {
-        pluginEvent.onEnable?.run()
+        if (!enabled) {
+            enabled = true
+            pluginEvent.onEnable?.run()
+        }
+    }
+
+    fun disable() = launch {
+        if (enabled) {
+            enabled = false
+            pluginEvent.onDisable?.run()
+        }
     }
 
     fun unload() = launch {
+        pluginEvent.onUnload?.run()
         Context.exit()
     }
 }

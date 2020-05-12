@@ -28,7 +28,11 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import net.mamoe.mirai.Bot
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.Response
 import org.itxtech.miraijs.MiraiJs
+import java.util.concurrent.TimeUnit
 
 object BotUtil {
     fun getAll(): List<Bot> {
@@ -51,7 +55,44 @@ object CoroutineUtil {
         }
     }
 
+    fun launchDelay(time: Long, call: Co) {
+        MiraiJs.launch {
+            delay(time)
+            var d = 0L
+            while (isActive && d != -1L) {
+                delay(d)
+                d = call.exec()
+            }
+        }
+    }
+
     interface Co {
         fun exec(): Long
     }
+}
+
+object HttpUtil {
+    val client = OkHttpClient.Builder()
+        .connectTimeout(1000, TimeUnit.MILLISECONDS)
+        .readTimeout(1000, TimeUnit.MILLISECONDS)
+        .addInterceptor {
+            return@addInterceptor it.proceed(
+                it.request().newBuilder()
+                    .addHeader(
+                        "User-Agent",
+                        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36"
+                    )
+                    .build()
+            )
+        }
+        .build()
+
+    fun get(url: String): Response {
+        val request = Request.Builder().url(url).build()
+        return client.newCall(request).execute()
+    }
+
+    fun newClient(): OkHttpClient.Builder = OkHttpClient.Builder()
+
+    fun newRequest(): Request.Builder = Request.Builder()
 }
