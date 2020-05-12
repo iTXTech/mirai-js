@@ -25,14 +25,11 @@
 package org.itxtech.miraijs
 
 import net.mamoe.mirai.console.plugins.PluginBase
-import java.io.File
+import org.itxtech.miraijs.plugin.PluginManager
 
 object MiraiJs : PluginBase() {
-    private val plDir: File by lazy { File(dataFolder.absolutePath + File.separatorChar + "plugins").also { it.mkdirs() } }
-    private val plData: File by lazy { File(dataFolder.absolutePath + File.separatorChar + "data").also { it.mkdirs() } }
-
     override fun onLoad() {
-        super.onLoad()
+        PluginManager.loadPlugins()
     }
 
     override fun onEnable() {
