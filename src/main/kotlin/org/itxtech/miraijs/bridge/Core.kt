@@ -24,17 +24,43 @@
 
 package org.itxtech.miraijs.bridge
 
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import net.mamoe.mirai.Bot
+import net.mamoe.mirai.console.command.Command
+import net.mamoe.mirai.console.command.CommandManager
+import net.mamoe.mirai.console.command.CommandSender
+import net.mamoe.mirai.console.command.registerCommand
 import net.mamoe.mirai.event.Event
 import net.mamoe.mirai.event.Listener
 import net.mamoe.mirai.event.subscribeAlways
 import org.itxtech.miraijs.MiraiJs
 import org.itxtech.miraijs.plugin.JsPlugin
 
-class CoreEvent(private val plugin: JsPlugin) {
+class Core(private val plugin: JsPlugin) {
     private val events = hashMapOf<Class<Event>, ArrayList<JsCallback>>()
     private val botEvents = hashMapOf<Bot, HashMap<Class<Event>, ArrayList<JsCallback>>>()
     private val listeners = arrayListOf<Listener<Event>>()
+    private val jobs = arrayListOf<Job>()
+    private val commands = arrayListOf<Command>()
+
+    fun clear() {
+        botEvents.clear()
+        events.clear()
+        listeners.forEach {
+            it.cancel()
+        }
+        listeners.clear()
+        jobs.forEach {
+            it.cancel()
+        }
+        jobs.clear()
+        commands.forEach {
+            CommandManager.unregister(it)
+        }
+        commands.clear()
+    }
 
     init {
         listeners.add(MiraiJs.subscribeAlways {
@@ -44,6 +70,10 @@ class CoreEvent(private val plugin: JsPlugin) {
                 }
             }
         })
+    }
+
+    interface JsCallback {
+        fun call(event: Event)
     }
 
     private fun subscribe(clz: Class<Event>, callback: JsCallback, map: HashMap<Class<Event>, ArrayList<JsCallback>>) {
@@ -72,16 +102,42 @@ class CoreEvent(private val plugin: JsPlugin) {
         subscribe(clz, callback, botEvents[bot]!!)
     }
 
-    fun clear() {
-        botEvents.clear()
-        events.clear()
-        listeners.forEach {
-            it.cancel()
-        }
-        listeners.clear()
+    @JvmOverloads
+    fun launch(call: Co, delay: Long = 0): Job {
+        return MiraiJs.launch {
+            kotlinx.coroutines.delay(delay)
+            var d = 0L
+            while (isActive && d != -1L) {
+                kotlinx.coroutines.delay(d)
+                d = call.exec()
+            }
+        }.apply { jobs.add(this) }
     }
-}
 
-interface JsCallback {
-    fun call(event: Event)
+    interface Co {
+        fun exec(): Long
+    }
+
+    @JvmOverloads
+    fun registerCommand(
+        cmdName: String,
+        cmdDescription: String = "",
+        cmdUsage: String = "",
+        cmdAlias: List<String>? = null,
+        cmd: CommandCallback
+    ): Command {
+        return MiraiJs.registerCommand {
+            name = cmdName
+            alias = cmdAlias
+            description = cmdDescription
+            usage = cmdUsage
+            onCommand {
+                return@onCommand cmd.call(this, it)
+            }
+        }.apply { commands.add(this) }
+    }
+
+    interface CommandCallback {
+        fun call(sender: CommandSender, args: List<String>): Boolean
+    }
 }

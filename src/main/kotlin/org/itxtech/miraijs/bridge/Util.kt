@@ -24,14 +24,10 @@
 
 package org.itxtech.miraijs.bridge
 
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
-import kotlinx.coroutines.launch
 import net.mamoe.mirai.Bot
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
-import org.itxtech.miraijs.MiraiJs
 import java.util.concurrent.TimeUnit
 
 object BotUtil {
@@ -41,24 +37,6 @@ object BotUtil {
 
     fun get(qq: Long = 0): Bot {
         return if (qq == 0L) Bot.botInstances.first() else Bot.getInstance(qq)
-    }
-}
-
-object CoroutineUtil {
-    @JvmOverloads
-    fun launch(call: Co, delay: Long = 0) {
-        MiraiJs.launch {
-            delay(delay)
-            var d = 0L
-            while (isActive && d != -1L) {
-                delay(d)
-                d = call.exec()
-            }
-        }
-    }
-
-    interface Co {
-        fun exec(): Long
     }
 }
 

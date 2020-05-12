@@ -34,16 +34,17 @@ import java.io.File
 import java.util.concurrent.Executors
 import kotlin.coroutines.ContinuationInterceptor
 
-data class JsPlugin(val id: Int, val file: File) {
-    var enabled = false
-    lateinit var dispatcher: PluginDispatcher
-    lateinit var cx: Context
-    lateinit var script: Script
-    lateinit var scope: ImporterTopLevel
-    lateinit var pluginInfo: PluginInfo
-    private val pluginEvent = PluginEvent()
-    private val coreEvent = CoreEvent(this)
+class JsPlugin(val id: Int, val file: File) {
+    private lateinit var dispatcher: PluginDispatcher
+    private lateinit var cx: Context
+    private lateinit var script: Script
+    private lateinit var scope: ImporterTopLevel
+    private val core = Core(this)
     private val logger = PluginLogger(this)
+
+    lateinit var pluginInfo: PluginInfo
+    val ev = PluginEvent()
+    var enabled = false
 
     private fun launch(b: suspend CoroutineScope.() -> Unit) {
         MiraiJs.launch(context = dispatcher, block = b)
@@ -52,10 +53,8 @@ data class JsPlugin(val id: Int, val file: File) {
     private fun loadLibs() {
         ScriptableObject.putProperty(scope, "plugin", Context.javaToJS(this, scope))
         ScriptableObject.putProperty(scope, "logger", Context.javaToJS(logger, scope))
-        ScriptableObject.putProperty(scope, "pluginEv", Context.javaToJS(pluginEvent, scope))
-        ScriptableObject.putProperty(scope, "coreEv", Context.javaToJS(coreEvent, scope))
+        ScriptableObject.putProperty(scope, "core", Context.javaToJS(core, scope))
         ScriptableObject.putProperty(scope, "bots", Context.javaToJS(BotUtil, scope))
-        ScriptableObject.putProperty(scope, "co", Context.javaToJS(CoroutineUtil, scope))
         ScriptableObject.putProperty(scope, "http", Context.javaToJS(HttpUtil, scope))
         cx.evaluateString(
             scope, """
@@ -94,14 +93,14 @@ data class JsPlugin(val id: Int, val file: File) {
                 )
             }
 
-            pluginEvent.onLoad?.run()
+            ev.onLoad?.run()
         }
     }
 
     fun enable() = launch {
         if (!enabled) {
             enabled = true
-            pluginEvent.onEnable?.run()
+            ev.onEnable?.run()
         }
     }
 
@@ -110,19 +109,19 @@ data class JsPlugin(val id: Int, val file: File) {
             enabled = false
             if (co) {
                 launch {
-                    pluginEvent.onDisable?.run()
+                    ev.onDisable?.run()
                 }
             } else {
-                pluginEvent.onDisable?.run()
+                ev.onDisable?.run()
             }
         }
     }
 
     fun unload() = launch {
         disable(false)
-        pluginEvent.onUnload?.run()
-        coreEvent.clear()
-        pluginEvent.clear()
+        ev.onUnload?.run()
+        core.clear()
+        ev.clear()
         Context.exit()
     }
 }
