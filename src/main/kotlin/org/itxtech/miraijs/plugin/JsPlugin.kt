@@ -34,7 +34,7 @@ import java.io.File
 import java.util.concurrent.Executors
 import kotlin.coroutines.ContinuationInterceptor
 
-data class JsPlugin(val file: File) {
+data class JsPlugin(val id: Int, val file: File) {
     var enabled = false
     lateinit var dispatcher: PluginDispatcher
     lateinit var cx: Context
@@ -42,7 +42,8 @@ data class JsPlugin(val file: File) {
     lateinit var scope: ImporterTopLevel
     lateinit var pluginInfo: PluginInfo
     private val pluginEvent = PluginEvent()
-    private val coreEvent = CoreEvent()
+    private val coreEvent = CoreEvent(this)
+    private val logger = PluginLogger(this)
 
     private fun launch(b: suspend CoroutineScope.() -> Unit) {
         MiraiJs.launch(context = dispatcher, block = b)
@@ -50,7 +51,7 @@ data class JsPlugin(val file: File) {
 
     private fun loadLibs() {
         ScriptableObject.putProperty(scope, "plugin", Context.javaToJS(this, scope))
-        ScriptableObject.putProperty(scope, "logger", Context.javaToJS(PluginLogger(this), scope))
+        ScriptableObject.putProperty(scope, "logger", Context.javaToJS(logger, scope))
         ScriptableObject.putProperty(scope, "pluginEv", Context.javaToJS(pluginEvent, scope))
         ScriptableObject.putProperty(scope, "coreEv", Context.javaToJS(coreEvent, scope))
         ScriptableObject.putProperty(scope, "bots", Context.javaToJS(BotUtil, scope))
@@ -104,15 +105,24 @@ data class JsPlugin(val file: File) {
         }
     }
 
-    fun disable() = launch {
+    fun disable(co: Boolean = true) {
         if (enabled) {
             enabled = false
-            pluginEvent.onDisable?.run()
+            if (co) {
+                launch {
+                    pluginEvent.onDisable?.run()
+                }
+            } else {
+                pluginEvent.onDisable?.run()
+            }
         }
     }
 
     fun unload() = launch {
+        disable(false)
         pluginEvent.onUnload?.run()
+        coreEvent.clear()
+        pluginEvent.clear()
         Context.exit()
     }
 }

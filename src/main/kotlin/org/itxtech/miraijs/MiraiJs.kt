@@ -30,6 +30,7 @@ import org.itxtech.miraijs.plugin.PluginManager
 object MiraiJs : PluginBase() {
     override fun onLoad() {
         PluginManager.loadPlugins()
+        PluginManager.registerCommand()
     }
 
     override fun onEnable() {

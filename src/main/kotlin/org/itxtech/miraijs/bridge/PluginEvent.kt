@@ -29,4 +29,11 @@ class PluginEvent {
     var onEnable: Runnable? = null
     var onDisable: Runnable? = null
     var onUnload: Runnable? = null
+
+    fun clear() {
+        onLoad = null
+        onEnable = null
+        onDisable = null
+        onUnload = null
+    }
 }

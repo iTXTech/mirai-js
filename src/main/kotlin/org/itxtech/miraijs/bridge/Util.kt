@@ -45,19 +45,10 @@ object BotUtil {
 }
 
 object CoroutineUtil {
-    fun launch(call: Co) {
+    @JvmOverloads
+    fun launch(call: Co, delay: Long = 0) {
         MiraiJs.launch {
-            var d = 0L
-            while (isActive && d != -1L) {
-                delay(d)
-                d = call.exec()
-            }
-        }
-    }
-
-    fun launchDelay(time: Long, call: Co) {
-        MiraiJs.launch {
-            delay(time)
+            delay(delay)
             var d = 0L
             while (isActive && d != -1L) {
                 delay(d)

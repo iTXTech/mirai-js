@@ -26,6 +26,8 @@ package org.itxtech.miraijs.bridge
 
 import org.itxtech.miraijs.MiraiJs
 import org.itxtech.miraijs.plugin.JsPlugin
+import org.mozilla.javascript.IdScriptableObject
+import org.mozilla.javascript.NativeJavaObject
 
 class PluginLogger(private val plugin: JsPlugin) {
     private fun prefix() = plugin.pluginInfo.name
@@ -38,8 +40,20 @@ class PluginLogger(private val plugin: JsPlugin) {
         MiraiJs.logger.debug("[${prefix()}] $str")
     }
 
-    fun error(str: String) {
-        MiraiJs.logger.error("[${prefix()}] $str")
+    @JvmOverloads
+    fun error(str: String, e: Any? = null) {
+        var t = e
+        if (e is IdScriptableObject) {
+            val obj = (e.get("javaException", e) as NativeJavaObject).unwrap()
+            if (obj is Throwable) {
+                t = obj
+            }
+        }
+        if (t is Throwable) {
+            MiraiJs.logger.error("[${prefix()}] $str", t)
+        } else {
+            MiraiJs.logger.error("[${prefix()}] $str")
+        }
     }
 
     fun warning(str: String) {
