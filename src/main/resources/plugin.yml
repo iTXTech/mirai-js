@@ -1,0 +1,5 @@
+name: MiraiJs
+main: org.itxtech.miraijs.MiraiJs
+version: 1.0.0
+author: iTX Technologies
+info: 使用JavaScript编写Mirai插件。

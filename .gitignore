@@ -1,0 +1,13 @@
+.idea
+.gradle
+native/.vs
+native/Debug
+native/Release
+native/x64
+libs
+*.aps
+build
+out
+epl-test/*.dll
+epl-test/*.bak
+epl-test/*.ec
