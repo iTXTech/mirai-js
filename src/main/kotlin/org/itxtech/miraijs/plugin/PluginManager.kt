@@ -51,4 +51,10 @@ object PluginManager {
         plugin.load()
         plugins.add(plugin)
     }
+
+    fun enablePlugins() {
+        plugins.forEach {
+            it.enable()
+        }
+    }
 }

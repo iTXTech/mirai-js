@@ -27,15 +27,8 @@ package org.itxtech.miraijs.plugin
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.launch
-import net.mamoe.mirai.Bot
-import net.mamoe.mirai.event.events.BotOnlineEvent
-import net.mamoe.mirai.event.subscribeAlways
-import net.mamoe.mirai.message.FriendMessageEvent
 import org.itxtech.miraijs.MiraiJs
-import org.itxtech.miraijs.bridge.BotUtil
-import org.itxtech.miraijs.bridge.CoreEvent
-import org.itxtech.miraijs.bridge.PluginEvent
-import org.itxtech.miraijs.bridge.PluginLogger
+import org.itxtech.miraijs.bridge.*
 import org.mozilla.javascript.*
 import java.io.File
 import java.util.concurrent.Executors
@@ -59,6 +52,7 @@ data class JsPlugin(val file: File) {
         ScriptableObject.putProperty(scope, "pluginEvent", Context.javaToJS(pluginEvent, scope))
         ScriptableObject.putProperty(scope, "coreEvent", Context.javaToJS(coreEvent, scope))
         ScriptableObject.putProperty(scope, "bots", Context.javaToJS(BotUtil, scope))
+        ScriptableObject.putProperty(scope, "co", Context.javaToJS(CoroutineUtil, scope))
         cx.evaluateString(
             scope, """
             importPackage(net.mamoe.mirai.event.events)
@@ -95,6 +89,10 @@ data class JsPlugin(val file: File) {
 
             pluginEvent.onLoad?.run()
         }
+    }
+
+    fun enable() = launch {
+        pluginEvent.onEnable?.run()
     }
 
     fun unload() = launch {

@@ -33,7 +33,7 @@ object MiraiJs : PluginBase() {
     }
 
     override fun onEnable() {
-        super.onEnable()
+        PluginManager.enablePlugins()
     }
 
     override fun onDisable() {
