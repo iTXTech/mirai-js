@@ -59,6 +59,13 @@ data class JsPlugin(val file: File) {
         ScriptableObject.putProperty(scope, "pluginEvent", Context.javaToJS(pluginEvent, scope))
         ScriptableObject.putProperty(scope, "coreEvent", Context.javaToJS(coreEvent, scope))
         ScriptableObject.putProperty(scope, "bots", Context.javaToJS(BotUtil, scope))
+        cx.evaluateString(
+            scope, """
+            importPackage(net.mamoe.mirai.event.events)
+            importPackage(net.mamoe.mirai.message)
+            importPackage(net.mamoe.mirai.message.data)
+        """.trimIndent(), "importMirai", 1, null
+        )
     }
 
     fun load() {

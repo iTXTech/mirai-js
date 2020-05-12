@@ -1,7 +1,3 @@
-importPackage(net.mamoe.mirai.event.events)
-importPackage(net.mamoe.mirai.message)
-importPackage(net.mamoe.mirai.message.data)
-
 pluginInfo = {
     name: "JsPlugin Example",
     version: "1.0.0",
