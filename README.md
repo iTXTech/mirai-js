@@ -1,6 +1,17 @@
 # Mirai Js
 
-使用`JavaScript`编写`Mirai`插件，支持与所有`JavaAPI`直接交互，运行于`JVM`，支持`Android`环境。
+使用`JavaScript`编写 [Mirai](https://github.com/mamoe/mirai) 插件，支持与所有`Mirai API`直接交互，运行于`JVM`，支持`Android`环境。
+
+## 使用须知
+
+**所有基于`Mirai Js`的`JavaScript`插件必须遵循`AGPL-v3`协议开放源代码，详见 [协议文本](LICENSE) 。**
+
+## 特性
+
+* 极简语法
+* 支持在JS启动协程
+* 不完整的 [ES6 支持](https://mozilla.github.io/rhino/compat/engines.html)
+* 施主别着急，更多功能即将加入。先看看 [例子](examples) 吧。
 
 ## 开源协议
 

@@ -5,12 +5,12 @@ pluginInfo = {
     author: "PeratX"
 };
 
-var verbose = true;
+let verbose = true;
 
 // onLoad 事件
-pluginEvent.onLoad = function () {
+pluginEvent.onLoad = () => {
     logger.info("插件已加载");
-    var v = 0;
+    let v = 0;
     // 启动协程
     co.launch(function () {
         v++;
@@ -24,17 +24,17 @@ pluginEvent.onLoad = function () {
     });
 };
 
-pluginEvent.onEnable = function () {
+pluginEvent.onEnable = () => {
     logger.info("插件已启用。");
 };
 
-coreEvent.subscribeAlways(BotOnlineEvent, function (ev) {
+coreEvent.subscribeAlways(BotOnlineEvent, ev => {
     logger.info(ev);
     // Bot上线后关闭
     verbose = false;
 });
 
-coreEvent.subscribeAlways(GroupMessageEvent, function (ev) {
+coreEvent.subscribeAlways(GroupMessageEvent, ev => {
     logger.info(ev);
     ev.group.sendMessage(new PlainText("MiraiJs 收到消息：").plus(ev.message));
 });

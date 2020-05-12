@@ -66,6 +66,8 @@ data class JsPlugin(val file: File) {
         dispatcher = PluginDispatcher()
         launch {
             cx = Context.enter()
+            // See https://mozilla.github.io/rhino/compat/engines.html
+            cx.languageVersion = Context.VERSION_ES6
             scope = ImporterTopLevel()
             scope.initStandardObjects(cx, false)
             loadLibs()
