@@ -25,22 +25,23 @@
 package org.itxtech.miraijs.plugin
 
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.ObsoleteCoroutinesApi
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.newSingleThreadContext
 import org.itxtech.miraijs.MiraiJs
 import org.itxtech.miraijs.bridge.*
 import org.mozilla.javascript.*
 import java.io.File
-import java.util.concurrent.Executors
-import kotlin.coroutines.ContinuationInterceptor
 
 class JsPlugin(private val manager: PluginManager, val id: Int, val file: File) {
-    private lateinit var dispatcher: PluginDispatcher
     private lateinit var cx: Context
     private lateinit var script: Script
     private lateinit var scope: ImporterTopLevel
     private val core = Core(this)
     private val logger = PluginLogger(this)
+
+    @OptIn(ObsoleteCoroutinesApi::class)
+    private val dispatcher = newSingleThreadContext("MiraiJs #$id")
 
     lateinit var pluginInfo: PluginInfo
     lateinit var dataDir: File
@@ -79,7 +80,6 @@ class JsPlugin(private val manager: PluginManager, val id: Int, val file: File) 
     }
 
     fun load() {
-        dispatcher = PluginDispatcher()
         launch {
             cx = Context.enter()
             // See https://mozilla.github.io/rhino/compat/engines.html
@@ -146,5 +146,3 @@ data class PluginInfo(
     val author: String = "未知",
     val website: String = ""
 )
-
-class PluginDispatcher : ContinuationInterceptor by Executors.newFixedThreadPool(1).asCoroutineDispatcher()
