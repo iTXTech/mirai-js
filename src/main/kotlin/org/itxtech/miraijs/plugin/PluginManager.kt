@@ -29,14 +29,18 @@ import net.mamoe.mirai.console.command.registerCommand
 import org.itxtech.miraijs.MiraiJs
 import java.io.File
 
-object PluginManager {
-    private val plDir: File by lazy { File(MiraiJs.dataFolder.absolutePath + File.separatorChar + "plugins").also { it.mkdirs() } }
-    private val plData: File by lazy { File(MiraiJs.dataFolder.absolutePath + File.separatorChar + "data").also { it.mkdirs() } }
+open class PluginManager {
+    protected val plDir: File by lazy { File(MiraiJs.dataFolder.absolutePath + File.separatorChar + "plugins").also { it.mkdirs() } }
+    protected val plData: File by lazy { File(MiraiJs.dataFolder.absolutePath + File.separatorChar + "data").also { it.mkdirs() } }
 
-    private val pluginId = atomic(0)
-    private val plugins = hashMapOf<Int, JsPlugin>()
+    open fun getPluginDataDir(name: String): File {
+        return File(plData.absolutePath + File.separatorChar + name).apply { mkdirs() }
+    }
 
-    fun loadPlugins() {
+    protected val pluginId = atomic(0)
+    protected val plugins = hashMapOf<Int, JsPlugin>()
+
+    open fun loadPlugins() {
         if (!MiraiJs.dataFolder.isDirectory) {
             MiraiJs.logger.error("数据文件夹不是一个文件夹！" + MiraiJs.dataFolder.absolutePath)
         } else {
@@ -46,7 +50,7 @@ object PluginManager {
         }
     }
 
-    fun loadPlugin(file: File): Boolean {
+    open fun loadPlugin(file: File): Boolean {
         if (file.exists() && file.isFile && file.absolutePath.endsWith(".js")) {
             MiraiJs.logger.info("正在加载JS插件：" + file.absolutePath)
             plugins.values.forEach {
@@ -54,7 +58,7 @@ object PluginManager {
                     return false
                 }
             }
-            val plugin = JsPlugin(pluginId.value, file)
+            val plugin = JsPlugin(this, pluginId.value, file)
             plugin.load()
             plugins[pluginId.getAndIncrement()] = plugin
             return true
@@ -62,19 +66,19 @@ object PluginManager {
         return false
     }
 
-    fun enablePlugins() {
+    open fun enablePlugins() {
         plugins.values.forEach {
             it.enable()
         }
     }
 
-    fun disablePlugins() {
+    open fun disablePlugins() {
         plugins.values.forEach {
             it.disable()
         }
     }
 
-    fun registerCommand() {
+    open fun registerCommand() {
         MiraiJs.registerCommand {
             name = "jpm"
             description = "Mirai Js 插件管理器"

@@ -28,16 +28,18 @@ import net.mamoe.mirai.console.plugins.PluginBase
 import org.itxtech.miraijs.plugin.PluginManager
 
 object MiraiJs : PluginBase() {
+    private val manager = PluginManager()
+
     override fun onLoad() {
-        PluginManager.loadPlugins()
-        PluginManager.registerCommand()
+        manager.loadPlugins()
+        manager.registerCommand()
     }
 
     override fun onEnable() {
-        PluginManager.enablePlugins()
+        manager.enablePlugins()
     }
 
     override fun onDisable() {
-        PluginManager.disablePlugins()
+        manager.disablePlugins()
     }
 }

@@ -1,6 +1,30 @@
+/*
+ *
+ * Mirai Js
+ *
+ * Copyright (C) 2020 iTX Technologies
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * @author PeratX
+ * @website https://github.com/iTXTech/mirai-js
+ *
+ */
+
 // 插件信息
 pluginInfo = {
-    name: "JsPlugin Example",
+    name: "JsPluginExample",
     version: "1.0.0",
     author: "PeratX",
     website: "https://github.com/iTXTech/mirai-js/blob/master/examples/reply.js"
@@ -10,7 +34,18 @@ let verbose = true;
 
 // onLoad 事件
 plugin.ev.onLoad = () => {
-    logger.info("插件已加载");
+    logger.info("插件已加载：" + plugin.dataDir);
+
+    // 插件数据读写
+    let file = plugin.getDataFile("test.txt")
+    // 第三个编码参数默认为 UTF-8，可空，同readText第二个参数
+    stor.writeText(file, "真的很强。", Charset.forName("GBK"));
+    logger.info("读取文件：" + file + " 内容：" + stor.readText(file, Charset.forName("GBK")));
+
+    let config = new JsonConfig(plugin.getDataFile("test.json"));
+    config.put("wow", "Hello World!");
+    config.save();
+
     let v = 0;
     // 启动协程
     core.launch(() => {

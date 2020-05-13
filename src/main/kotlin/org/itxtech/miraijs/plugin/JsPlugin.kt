@@ -34,7 +34,7 @@ import java.io.File
 import java.util.concurrent.Executors
 import kotlin.coroutines.ContinuationInterceptor
 
-class JsPlugin(val id: Int, val file: File) {
+class JsPlugin(private val manager: PluginManager, val id: Int, val file: File) {
     private lateinit var dispatcher: PluginDispatcher
     private lateinit var cx: Context
     private lateinit var script: Script
@@ -43,8 +43,17 @@ class JsPlugin(val id: Int, val file: File) {
     private val logger = PluginLogger(this)
 
     lateinit var pluginInfo: PluginInfo
+    lateinit var dataDir: File
     val ev = PluginEvent()
     var enabled = false
+
+    fun getDataFile(name: String): File {
+        return File(dataDir.absolutePath + File.separatorChar + name).apply {
+            if (!exists()) {
+                createNewFile()
+            }
+        }
+    }
 
     private fun launch(b: suspend CoroutineScope.() -> Unit) {
         MiraiJs.launch(context = dispatcher, block = b)
@@ -56,12 +65,15 @@ class JsPlugin(val id: Int, val file: File) {
         ScriptableObject.putProperty(scope, "core", Context.javaToJS(core, scope))
         ScriptableObject.putProperty(scope, "bots", Context.javaToJS(BotUtil, scope))
         ScriptableObject.putProperty(scope, "http", Context.javaToJS(HttpUtil, scope))
+        ScriptableObject.putProperty(scope, "stor", Context.javaToJS(StorageUtil, scope))
         cx.evaluateString(
             scope, """
             importPackage(net.mamoe.mirai.event.events)
             importPackage(net.mamoe.mirai.message)
             importPackage(net.mamoe.mirai.message.data)
+            importPackage(net.mamoe.mirai.console.plugins)
             importPackage(java.util.concurrent)
+            importPackage(java.nio.charset)
         """.trimIndent(), "importMirai", 1, null
         )
     }
@@ -92,6 +104,8 @@ class JsPlugin(val id: Int, val file: File) {
                     info.getOrDefault("website", "") as String
                 )
             }
+
+            dataDir = manager.getPluginDataDir(pluginInfo.name)
 
             ev.onLoad?.run()
         }

@@ -28,6 +28,8 @@ import net.mamoe.mirai.Bot
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
+import java.io.File
+import java.nio.charset.Charset
 import java.util.concurrent.TimeUnit
 
 object BotUtil {
@@ -64,4 +66,16 @@ object HttpUtil {
     fun newClient(): OkHttpClient.Builder = OkHttpClient.Builder()
 
     fun newRequest(): Request.Builder = Request.Builder()
+}
+
+object StorageUtil {
+    @JvmOverloads
+    fun writeText(file: File, str: String, charset: Charset = Charsets.UTF_8) {
+        file.writeText(str, charset)
+    }
+
+    @JvmOverloads
+    fun readText(file: File, charset: Charset = Charsets.UTF_8): String {
+        return file.readText(charset)
+    }
 }
