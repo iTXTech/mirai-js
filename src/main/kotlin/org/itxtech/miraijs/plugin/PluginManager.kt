@@ -51,14 +51,21 @@ open class PluginManager {
     }
 
     open fun loadPlugin(file: File): Boolean {
-        if (file.exists() && file.isFile && file.absolutePath.endsWith(".js")) {
-            MiraiJs.logger.info("正在加载JS插件：" + file.absolutePath)
+        if (file.exists() && file.isFile && file.name.endsWith(".js")) {
+            MiraiJs.logger.info("正在加载 MiraiJs 插件：" + file.name)
             plugins.values.forEach {
                 if (it.file == file) {
                     return false
                 }
             }
             val plugin = JsPlugin(this, pluginId.value, file)
+            plugins.values.forEach {
+                if (it.pluginInfo.name == plugin.pluginInfo.name) {
+                    MiraiJs.logger.error("插件 \"${file.name}\" 与已加载的插件 \"${it.file.name}\" 冲突：相同的插件")
+                    plugin.unload()
+                    return false
+                }
+            }
             plugin.load()
             plugins[pluginId.getAndIncrement()] = plugin
             return true
