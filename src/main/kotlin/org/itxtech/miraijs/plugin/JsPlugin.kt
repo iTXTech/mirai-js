@@ -48,17 +48,14 @@ class JsPlugin(private val manager: PluginManager, val id: Int, val file: File) 
     val ev = PluginEvent()
     var enabled = false
 
-    fun getDataFile(name: String): File {
-        return File(dataDir.absolutePath + File.separatorChar + name).apply {
+    fun getDataFile(name: String) =
+        File(dataDir.absolutePath + File.separatorChar + name).apply {
             if (!exists()) {
                 createNewFile()
             }
         }
-    }
 
-    private fun launch(b: suspend CoroutineScope.() -> Unit) {
-        MiraiJs.launch(context = dispatcher, block = b)
-    }
+    private fun launch(b: suspend CoroutineScope.() -> Unit) = MiraiJs.launch(context = dispatcher, block = b)
 
     private fun loadLibs() {
         ScriptableObject.putProperty(scope, "plugin", Context.javaToJS(this, scope))
@@ -79,37 +76,36 @@ class JsPlugin(private val manager: PluginManager, val id: Int, val file: File) 
         )
     }
 
-    fun load() {
-        launch {
-            cx = Context.enter()
-            // See https://mozilla.github.io/rhino/compat/engines.html
-            cx.languageVersion = Context.VERSION_ES6
-            scope = ImporterTopLevel()
-            scope.initStandardObjects(cx, false)
-            loadLibs()
+    fun load() = launch {
+        cx = Context.enter()
+        // See https://mozilla.github.io/rhino/compat/engines.html
+        cx.languageVersion = Context.VERSION_ES6
+        scope = ImporterTopLevel()
+        scope.initStandardObjects(cx, false)
+        loadLibs()
 
-            script = cx.compileString(file.readText(), file.name, 1, null)
-            script.exec(cx, scope)
+        script = cx.compileString(file.readText(), file.name, 1, null)
+        script.exec(cx, scope)
 
-            var info = scope["pluginInfo"]
-            pluginInfo = if (info == ScriptableObject.NOT_FOUND) {
-                MiraiJs.logger.error("未找到插件信息：" + file.absolutePath)
-                PluginInfo(file.name)
-            } else {
-                info = info as NativeObject
-                PluginInfo(
-                    info["name"] as String,
-                    info.getOrDefault("version", "") as String,
-                    info.getOrDefault("author", "") as String,
-                    info.getOrDefault("website", "") as String
-                )
-            }
-
-            dataDir = manager.getPluginDataDir(pluginInfo.name)
-
-            ev.onLoad?.run()
+        var info = scope["pluginInfo"]
+        pluginInfo = if (info == ScriptableObject.NOT_FOUND) {
+            MiraiJs.logger.error("未找到插件信息：" + file.absolutePath)
+            PluginInfo(file.name)
+        } else {
+            info = info as NativeObject
+            PluginInfo(
+                info["name"] as String,
+                info.getOrDefault("version", "") as String,
+                info.getOrDefault("author", "") as String,
+                info.getOrDefault("website", "") as String
+            )
         }
+
+        dataDir = manager.getPluginDataDir(pluginInfo.name)
+
+        ev.onLoad?.run()
     }
+
 
     fun enable() = launch {
         if (!enabled) {

@@ -76,7 +76,10 @@ class Core(private val plugin: JsPlugin) {
         fun call(event: Event)
     }
 
-    private fun subscribe(clz: Class<Event>, callback: JsCallback, map: HashMap<Class<Event>, ArrayList<JsCallback>>) {
+    private fun subscribe(
+        clz: Class<Event>, callback: JsCallback,
+        map: HashMap<Class<Event>, ArrayList<JsCallback>>
+    ) {
         if (map.containsKey(clz)) {
             map[clz]!!.add(callback)
         } else {
@@ -103,16 +106,14 @@ class Core(private val plugin: JsPlugin) {
     }
 
     @JvmOverloads
-    fun launch(call: Co, delay: Long = 0): Job {
-        return MiraiJs.launch {
-            kotlinx.coroutines.delay(delay)
-            var d = 0L
-            while (isActive && d != -1L) {
-                kotlinx.coroutines.delay(d)
-                d = call.exec()
-            }
-        }.apply { jobs.add(this) }
-    }
+    fun launch(call: Co, delay: Long = 0) = MiraiJs.launch {
+        kotlinx.coroutines.delay(delay)
+        var d = 0L
+        while (isActive && d != -1L) {
+            kotlinx.coroutines.delay(d)
+            d = call.exec()
+        }
+    }.apply { jobs.add(this) }
 
     interface Co {
         fun exec(): Long
@@ -125,17 +126,15 @@ class Core(private val plugin: JsPlugin) {
         cmdUsage: String = "",
         cmdAlias: List<String>? = null,
         cmd: CommandCallback
-    ): Command {
-        return MiraiJs.registerCommand {
-            name = cmdName
-            alias = cmdAlias
-            description = cmdDescription
-            usage = cmdUsage
-            onCommand {
-                return@onCommand cmd.call(this, it)
-            }
-        }.apply { commands.add(this) }
-    }
+    ) = MiraiJs.registerCommand {
+        name = cmdName
+        alias = cmdAlias
+        description = cmdDescription
+        usage = cmdUsage
+        onCommand {
+            return@onCommand cmd.call(this, it)
+        }
+    }.apply { commands.add(this) }
 
     interface CommandCallback {
         fun call(sender: CommandSender, args: List<String>): Boolean

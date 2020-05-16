@@ -33,12 +33,11 @@ open class PluginManager {
     protected val plDir: File by lazy { File(MiraiJs.dataFolder.absolutePath + File.separatorChar + "plugins").also { it.mkdirs() } }
     protected val plData: File by lazy { File(MiraiJs.dataFolder.absolutePath + File.separatorChar + "data").also { it.mkdirs() } }
 
-    open fun getPluginDataDir(name: String): File {
-        return File(plData.absolutePath + File.separatorChar + name).apply { mkdirs() }
-    }
-
     protected val pluginId = atomic(0)
     protected val plugins = hashMapOf<Int, JsPlugin>()
+
+    open fun getPluginDataDir(name: String) =
+        File(plData.absolutePath + File.separatorChar + name).apply { mkdirs() }
 
     open fun loadPlugins() {
         if (!MiraiJs.dataFolder.isDirectory) {
@@ -88,7 +87,7 @@ open class PluginManager {
     open fun registerCommand() {
         MiraiJs.registerCommand {
             name = "jpm"
-            description = "Mirai Js 插件管理器"
+            description = "MiraiJs 插件管理器"
             usage = "jpm [list|enable|disable|load|unload] (插件名/文件名)"
             onCommand {
                 if ((it.isEmpty() || (it[0] != "list" && it.size < 2))) {
@@ -96,7 +95,7 @@ open class PluginManager {
                 }
                 when (it[0]) {
                     "list" -> {
-                        appendMessage("共加载了 " + plugins.size + " 个 Mirai Js 插件。")
+                        appendMessage("共加载了 " + plugins.size + " 个 MiraiJs 插件。")
                         plugins.values.forEach { p ->
                             appendMessage(
                                 "Id：" + p.id + " 文件：" + p.file.name + " 名称：" + p.pluginInfo.name + " 状态：" +
