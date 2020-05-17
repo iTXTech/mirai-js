@@ -24,6 +24,7 @@
 
 package org.itxtech.miraijs.bridge
 
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import net.mamoe.mirai.Bot
@@ -42,15 +43,18 @@ class Core(private val plugin: JsPlugin) {
     private val commands = arrayListOf<Command>()
 
     fun clear() {
-        botEvents.clear()
-        events.clear()
         commands.forEach {
             CommandManager.unregister(it)
         }
         commands.clear()
     }
 
-    init {
+    fun detach() {
+        botEvents.clear()
+        events.clear()
+    }
+
+    fun attach() {
         plugin.subscribeAlways<Event> {
             if (plugin.enabled) {
                 events[javaClass]?.forEach {
@@ -80,11 +84,11 @@ class Core(private val plugin: JsPlugin) {
     }
 
     @JvmOverloads
-    fun launch(call: Co, delay: Long = 0) = plugin.launch {
-        kotlinx.coroutines.delay(delay)
+    fun launch(call: Co, sleep: Long = 0) = plugin.launch {
+        delay(sleep)
         var d = 0L
         while (isActive && d != -1L) {
-            kotlinx.coroutines.delay(d)
+            delay(d)
             d = call.exec()
         }
     }

@@ -37,8 +37,6 @@ class JsPlugin(
     val file: File
 ) : CoroutineScope {
     private val job = SupervisorJob()
-
-    @OptIn(ObsoleteCoroutinesApi::class)
     override val coroutineContext: CoroutineContext = MiraiJs.coroutineContext + job
 
     private lateinit var cx: Context
@@ -115,6 +113,7 @@ class JsPlugin(
         if (!enabled) {
             enabled = true
             ev.onEnable?.run()
+            core.attach()
         }
     }
 
@@ -122,6 +121,8 @@ class JsPlugin(
         if (enabled) {
             enabled = false
             ev.onDisable?.run()
+            core.detach()
+            job.cancelChildren()
         }
     }
 
@@ -130,8 +131,8 @@ class JsPlugin(
         ev.onUnload?.run()
         core.clear()
         ev.clear()
-        job.cancel()
         Context.exit()
+        job.cancel()
     }
 }
 
