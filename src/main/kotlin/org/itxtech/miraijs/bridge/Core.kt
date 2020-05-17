@@ -24,7 +24,6 @@
 
 package org.itxtech.miraijs.bridge
 
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import net.mamoe.mirai.Bot
@@ -33,7 +32,6 @@ import net.mamoe.mirai.console.command.CommandManager
 import net.mamoe.mirai.console.command.CommandSender
 import net.mamoe.mirai.console.command.registerCommand
 import net.mamoe.mirai.event.Event
-import net.mamoe.mirai.event.Listener
 import net.mamoe.mirai.event.subscribeAlways
 import org.itxtech.miraijs.MiraiJs
 import org.itxtech.miraijs.plugin.JsPlugin
@@ -41,21 +39,11 @@ import org.itxtech.miraijs.plugin.JsPlugin
 class Core(private val plugin: JsPlugin) {
     private val events = hashMapOf<Class<Event>, ArrayList<JsCallback>>()
     private val botEvents = hashMapOf<Bot, HashMap<Class<Event>, ArrayList<JsCallback>>>()
-    private val listeners = arrayListOf<Listener<Event>>()
-    private val jobs = arrayListOf<Job>()
     private val commands = arrayListOf<Command>()
 
     fun clear() {
         botEvents.clear()
         events.clear()
-        listeners.forEach {
-            it.cancel()
-        }
-        listeners.clear()
-        jobs.forEach {
-            it.cancel()
-        }
-        jobs.clear()
         commands.forEach {
             CommandManager.unregister(it)
         }
@@ -63,13 +51,13 @@ class Core(private val plugin: JsPlugin) {
     }
 
     init {
-        listeners.add(MiraiJs.subscribeAlways {
+        plugin.subscribeAlways<Event> {
             if (plugin.enabled) {
                 events[javaClass]?.forEach {
                     it.call(this)
                 }
             }
-        })
+        }
     }
 
     interface JsCallback {
@@ -91,29 +79,15 @@ class Core(private val plugin: JsPlugin) {
         subscribe(clz, callback, events)
     }
 
-    fun subscribeBotAlways(bot: Bot, clz: Class<Event>, callback: JsCallback) {
-        if (!botEvents.containsKey(bot)) {
-            botEvents[bot] = hashMapOf()
-            listeners.add(bot.subscribeAlways {
-                if (plugin.enabled) {
-                    botEvents[bot]?.get(javaClass)?.forEach {
-                        it.call(this)
-                    }
-                }
-            })
-        }
-        subscribe(clz, callback, botEvents[bot]!!)
-    }
-
     @JvmOverloads
-    fun launch(call: Co, delay: Long = 0) = MiraiJs.launch {
+    fun launch(call: Co, delay: Long = 0) = plugin.launch {
         kotlinx.coroutines.delay(delay)
         var d = 0L
         while (isActive && d != -1L) {
             kotlinx.coroutines.delay(d)
             d = call.exec()
         }
-    }.apply { jobs.add(this) }
+    }
 
     interface Co {
         fun exec(): Long

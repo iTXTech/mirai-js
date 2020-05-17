@@ -24,16 +24,23 @@
 
 package org.itxtech.miraijs.plugin
 
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.ObsoleteCoroutinesApi
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.newSingleThreadContext
+import kotlinx.coroutines.*
 import org.itxtech.miraijs.MiraiJs
 import org.itxtech.miraijs.bridge.*
 import org.mozilla.javascript.*
 import java.io.File
+import kotlin.coroutines.CoroutineContext
 
-class JsPlugin(private val manager: PluginManager, val id: Int, val file: File) {
+class JsPlugin(
+    private val manager: PluginManager,
+    val id: Int,
+    val file: File
+) : CoroutineScope {
+    private val job = SupervisorJob()
+
+    @OptIn(ObsoleteCoroutinesApi::class)
+    override val coroutineContext: CoroutineContext = MiraiJs.coroutineContext + job
+
     private lateinit var cx: Context
     private lateinit var script: Script
     private lateinit var scope: ImporterTopLevel
@@ -55,8 +62,6 @@ class JsPlugin(private val manager: PluginManager, val id: Int, val file: File) 
             }
         }
 
-    private fun launch(b: suspend CoroutineScope.() -> Unit) = MiraiJs.launch(context = dispatcher, block = b)
-
     private fun loadLibs() {
         ScriptableObject.putProperty(scope, "plugin", Context.javaToJS(this, scope))
         ScriptableObject.putProperty(scope, "logger", Context.javaToJS(logger, scope))
@@ -76,7 +81,7 @@ class JsPlugin(private val manager: PluginManager, val id: Int, val file: File) 
         )
     }
 
-    fun load() = launch {
+    fun load() = launch(dispatcher) {
         cx = Context.enter()
         // See https://mozilla.github.io/rhino/compat/engines.html
         cx.languageVersion = Context.VERSION_ES6
@@ -106,32 +111,26 @@ class JsPlugin(private val manager: PluginManager, val id: Int, val file: File) 
         ev.onLoad?.run()
     }
 
-
-    fun enable() = launch {
+    fun enable() = launch(dispatcher) {
         if (!enabled) {
             enabled = true
             ev.onEnable?.run()
         }
     }
 
-    fun disable(co: Boolean = true) {
+    fun disable() {
         if (enabled) {
             enabled = false
-            if (co) {
-                launch {
-                    ev.onDisable?.run()
-                }
-            } else {
-                ev.onDisable?.run()
-            }
+            ev.onDisable?.run()
         }
     }
 
-    fun unload() = launch {
-        disable(false)
+    fun unload() = launch(dispatcher) {
+        disable()
         ev.onUnload?.run()
         core.clear()
         ev.clear()
+        job.cancel()
         Context.exit()
     }
 }

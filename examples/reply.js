@@ -100,6 +100,7 @@ plugin.ev.onEnable = () => {
     } catch (e) {
         logger.error("无法获取网页", e)
     }
+    regEv();
 };
 
 plugin.ev.onDisable = () => {
@@ -110,10 +111,12 @@ plugin.ev.onUnload = () => {
     logger.info("插件已卸载。");
 };
 
-core.subscribeAlways(BotOnlineEvent, ev => {
-    logger.info(ev);
-    core.subscribeBotAlways(ev.bot, GroupMessageEvent, ev => {
+function regEv() {
+    core.subscribeAlways(BotOnlineEvent, ev => {
+        logger.info(ev);
+    });
+    core.subscribeAlways(GroupMessageEvent, ev => {
         logger.info(ev);
         ev.group.sendMessage(new PlainText("MiraiJs 收到消息：").plus(ev.message));
     })
-});
+}
