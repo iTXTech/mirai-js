@@ -81,6 +81,7 @@ class JsPlugin(
 
     fun load() = launch(dispatcher) {
         cx = Context.enter()
+        cx.optimizationLevel = manager.optimizationLevel
         // See https://mozilla.github.io/rhino/compat/engines.html
         cx.languageVersion = Context.VERSION_ES6
         scope = ImporterTopLevel()

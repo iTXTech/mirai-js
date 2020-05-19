@@ -35,6 +35,15 @@ open class PluginManager {
 
     protected val pluginId = atomic(0)
     protected val plugins = hashMapOf<Int, JsPlugin>()
+    var optimizationLevel = detectOptLvl()
+
+    private fun detectOptLvl() =
+        try {
+            Class.forName("android.os.Build")
+            0
+        } catch (e: Throwable) {
+            -1
+        }
 
     open fun getPluginDataDir(name: String) =
         File(plData.absolutePath + File.separatorChar + name).apply { mkdirs() }
