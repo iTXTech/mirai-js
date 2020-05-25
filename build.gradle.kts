@@ -23,10 +23,10 @@ repositories {
 
 dependencies {
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.6")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.7")
 
-    implementation("net.mamoe:mirai-core:1.0-RC2-1")
-    implementation("net.mamoe:mirai-console:0.5.1")
+    implementation("net.mamoe:mirai-core:1.0.0")
+    implementation("net.mamoe:mirai-console:0.5.2")
 
     implementation("org.mozilla:rhino:1.7.12")
     implementation("com.squareup.okhttp3:okhttp:4.6.0")
