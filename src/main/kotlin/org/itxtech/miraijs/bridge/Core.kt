@@ -27,7 +27,6 @@ package org.itxtech.miraijs.bridge
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import net.mamoe.mirai.Bot
 import net.mamoe.mirai.console.command.Command
 import net.mamoe.mirai.console.command.CommandManager
 import net.mamoe.mirai.console.command.CommandSender
@@ -39,18 +38,14 @@ import org.itxtech.miraijs.plugin.JsPlugin
 
 class Core(private val plugin: JsPlugin) {
     private val events = hashMapOf<Class<Event>, ArrayList<JsCallback>>()
-    private val botEvents = hashMapOf<Bot, HashMap<Class<Event>, ArrayList<JsCallback>>>()
     private val commands = arrayListOf<Command>()
 
     fun clear() {
-        commands.forEach {
-            CommandManager.unregister(it)
-        }
+        commands.forEach { CommandManager.unregister(it) }
         commands.clear()
     }
 
     fun detach() {
-        botEvents.clear()
         events.clear()
     }
 
