@@ -97,7 +97,7 @@ open class PluginManager {
         MiraiJs.registerCommand {
             name = "jpm"
             description = "MiraiJs 插件管理器"
-            usage = "jpm [list|enable|disable|load|unload] (插件名/文件名)"
+            usage = "jpm [list|enable|disable|load|unload] (插件 Id/文件名)"
             onCommand {
                 if ((it.isEmpty() || (it[0] != "list" && it.size < 2))) {
                     return@onCommand false

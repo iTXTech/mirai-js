@@ -22,7 +22,7 @@
 1. 在 `mirai-console` 中键入 `jpm` 获得帮助
 1. `jpm` (`JavaScript Plugin Manager`) 可`列出插件`、`启用/停用/加载/卸载插件`
 
-`jpm [list|enable|disable|load|unload] (插件名/文件名)`
+`jpm [list|enable|disable|load|unload] (插件 Id/文件名)`
 
 ## 开源协议
 
