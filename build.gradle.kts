@@ -25,11 +25,11 @@ dependencies {
     implementation(kotlin("stdlib-jdk8"))
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.7")
 
-    implementation("net.mamoe:mirai-core:1.0.1")
+    implementation("net.mamoe:mirai-core:1.1.1")
     implementation("net.mamoe:mirai-console:0.5.2")
 
     implementation("org.mozilla:rhino:1.7.12")
-    implementation("com.squareup.okhttp3:okhttp:4.7.2")
+    implementation("com.squareup.okhttp3:okhttp:4.8.0")
 }
 
 tasks.named<Jar>("jar") {
