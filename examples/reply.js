@@ -64,11 +64,13 @@ plugin.ev.onLoad = () => {
         return -1;
     }, 1000);
     // 命令名称，描述，帮助，别名，回调
-    core.registerCommand("test", "测试命令", "test", null, (sender, args) => {
+    core.registerCommand((sender, args) => {
         logger.info("发送者：" + sender)
         logger.info("参数：" + args)
+        // 向命令发送者发送消息，必须为Message，因为发送者可能来自QQ聊天
+        sender.sendMessage(new PlainText("您好。"))
         return true
-    });
+    }, "test", "测试命令", "test");
 };
 
 plugin.ev.onEnable = () => {

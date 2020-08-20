@@ -27,21 +27,19 @@ package org.itxtech.miraijs.bridge
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import net.mamoe.mirai.console.command.Command
-import net.mamoe.mirai.console.command.CommandManager
-import net.mamoe.mirai.console.command.CommandSender
-import net.mamoe.mirai.console.command.registerCommand
+import net.mamoe.mirai.console.command.*
+import net.mamoe.mirai.console.command.CommandManager.INSTANCE.register
+import net.mamoe.mirai.console.command.CommandManager.INSTANCE.unregister
 import net.mamoe.mirai.event.Event
 import net.mamoe.mirai.event.subscribeAlways
-import org.itxtech.miraijs.MiraiJs
 import org.itxtech.miraijs.plugin.JsPlugin
 
 class Core(private val plugin: JsPlugin) {
     private val events = hashMapOf<Class<Event>, ArrayList<JsCallback>>()
-    private val commands = arrayListOf<Command>()
+    private val commands = arrayListOf<RawCommand>()
 
     fun clear() {
-        commands.forEach { CommandManager.unregister(it) }
+        commands.forEach { it.unregister() }
         commands.clear()
     }
 
@@ -94,20 +92,33 @@ class Core(private val plugin: JsPlugin) {
 
     @JvmOverloads
     fun registerCommand(
+        cmd: CommandCallback,
         cmdName: String,
         cmdDescription: String = "",
         cmdUsage: String = "",
-        cmdAlias: List<String>? = null,
-        cmd: CommandCallback
-    ) = MiraiJs.registerCommand {
-        name = cmdName
-        alias = cmdAlias
-        description = cmdDescription
-        usage = cmdUsage
-        onCommand {
-            return@onCommand cmd.call(this, it)
+        prefixOptional: Boolean = false,
+        cmdAlias: List<String> = listOf(),
+        cmdOwner: ConsoleCommandOwner,
+        cmdPermission: CommandPermission.Default
+    ) {
+        object : RawCommand(
+            owner = cmdOwner,
+            names = arrayOf(cmdName) + cmdAlias.toList(),
+            description = cmdDescription,
+            usage = cmdUsage,
+            prefixOptional = prefixOptional,
+            permission = cmdPermission
+        ) {
+            override suspend fun CommandSender.onCommand(args: Array<out Any>) {
+                if (!cmd.call(this, args.map { return@map it.toString() })) {
+                    sendMessage(usage)
+                }
+            }
+        }.apply {
+            register()
+            commands.add(this)
         }
-    }.apply { commands.add(this) }
+    }
 
     interface CommandCallback {
         fun call(sender: CommandSender, args: List<String>): Boolean

@@ -25,7 +25,12 @@
 package org.itxtech.miraijs.plugin
 
 import kotlinx.atomicfu.atomic
-import net.mamoe.mirai.console.command.registerCommand
+import net.mamoe.mirai.console.command.CommandManager.INSTANCE.register
+import net.mamoe.mirai.console.command.CommandSender
+import net.mamoe.mirai.console.command.CompositeCommand
+import net.mamoe.mirai.console.command.ConsoleCommandOwner
+import net.mamoe.mirai.console.command.sendMessage
+import net.mamoe.mirai.console.util.ConsoleExperimentalAPI
 import org.itxtech.miraijs.MiraiJs
 import java.io.File
 
@@ -35,6 +40,7 @@ open class PluginManager {
 
     protected val pluginId = atomic(0)
     protected val plugins = hashMapOf<Int, JsPlugin>()
+    protected val command = JpmCommand(this)
     var optimizationLevel = detectOptLvl()
 
     private fun detectOptLvl() =
@@ -93,61 +99,75 @@ open class PluginManager {
         }
     }
 
-    open fun registerCommand() {
-        MiraiJs.registerCommand {
-            name = "jpm"
-            description = "MiraiJs 插件管理器"
-            usage = "jpm [list|enable|disable|load|unload] (插件 Id/文件名)"
-            onCommand {
-                if ((it.isEmpty() || (it[0] != "list" && it.size < 2))) {
-                    return@onCommand false
-                }
-                when (it[0]) {
-                    "list" -> {
-                        appendMessage("共加载了 " + plugins.size + " 个 MiraiJs 插件。")
-                        plugins.values.forEach { p ->
-                            appendMessage(
-                                "Id：" + p.id + " 文件：" + p.file.name + " 名称：" + p.pluginInfo.name + " 状态：" +
-                                        (if (p.enabled) "启用" else "停用") + " 版本：" + p.pluginInfo.version +
-                                        " 作者：" + p.pluginInfo.author
-
-                            )
-                            if (p.pluginInfo.website != "") {
-                                appendMessage("主页：" + p.pluginInfo.website)
-                            }
-                        }
-                    }
-                    "load" -> {
-                        if (!loadPlugin(File(plDir.absolutePath + File.separatorChar + it[1]))) {
-                            appendMessage("文件 \"${it[1]}\" 非法。")
-                        }
-                    }
-                    "unload" -> {
-                        if (plugins.containsKey(it[1].toInt())) {
-                            plugins[it[1].toInt()]!!.unload()
-                            plugins.remove(it[1].toInt())
-                        } else {
-                            appendMessage("Id " + it[1] + " 不存在。")
-                        }
-                    }
-                    "enable" -> {
-                        if (plugins.containsKey(it[1].toInt())) {
-                            plugins[it[1].toInt()]!!.enable()
-                        } else {
-                            appendMessage("Id " + it[1] + " 不存在。")
-                        }
-                    }
-                    "disable" -> {
-                        if (plugins.containsKey(it[1].toInt())) {
-                            plugins[it[1].toInt()]!!.disable()
-                        } else {
-                            appendMessage("Id " + it[1] + " 不存在。")
-                        }
-                    }
-                    else -> return@onCommand false
-                }
-                return@onCommand true
+    @OptIn(ConsoleExperimentalAPI::class)
+    class JpmCommand(private val manager: PluginManager) : CompositeCommand(
+        ConsoleCommandOwner, "jpm",
+        description = "Mirai Js 插件管理器"
+    ) {
+        private fun StringBuilder.getCommonPluginInfo(p: JsPlugin) {
+            appendLine("Id：${p.id} 文件：${p.file.name} 名称：${p.pluginInfo.name} 状态：${if (p.enabled) "启用" else "停用"} 版本：${p.pluginInfo.version} 作者：${p.pluginInfo.author}")
+            if (p.pluginInfo.website != "") {
+                appendLine("主页：${p.pluginInfo.website}")
             }
         }
+
+        @SubCommand
+        suspend fun CommandSender.list() {
+            sendMessage(buildString {
+                appendLine("共加载了 ${manager.plugins.size} 个 MiraiJs 插件。")
+                appendLine("")
+                manager.plugins.values.forEach { p ->
+                    getCommonPluginInfo(p)
+                    appendLine("")
+                }
+            })
+        }
+
+        @SubCommand
+        suspend fun CommandSender.load(@Name("Js文件名") file: String) {
+            sendMessage(buildString {
+                if (!manager.loadPlugin(File(manager.plDir.absolutePath + File.separatorChar + file))) {
+                    appendLine("文件 \"${file}\" 非法。")
+                }
+            })
+        }
+
+        @SubCommand
+        suspend fun CommandSender.unload(@Name("插件Id") id: Int) {
+            sendMessage(buildString {
+                if (manager.plugins.containsKey(id)) {
+                    manager.plugins[id]!!.unload()
+                    manager.plugins.remove(id)
+                } else {
+                    appendLine("Id $id 不存在。")
+                }
+            })
+        }
+
+        @SubCommand
+        suspend fun CommandSender.enable(@Name("插件Id") id: Int) {
+            sendMessage(buildString {
+                if (manager.plugins.containsKey(id)) {
+                    manager.plugins[id]!!.enable()
+                } else {
+                    appendLine("Id $id 不存在。")
+                }
+            })
+        }
+
+        @SubCommand
+        suspend fun CommandSender.disable(@Name("插件Id") id: Int) {
+            sendMessage(buildString {
+                if (manager.plugins.containsKey(id)) {
+                    manager.plugins[id]!!.disable()
+                } else {
+                    appendLine("Id $id 不存在。")
+                }
+            })
+        }
+    }
+
+    open fun registerCommand() {
+        command.register()
     }
 }
