@@ -24,8 +24,8 @@ repositories {
 dependencies {
     api("org.jetbrains.kotlinx:atomicfu:0.14.4")
 
-    implementation("net.mamoe:mirai-core:1.2.1")
-    implementation("net.mamoe:mirai-console:1.0-M2")
+    implementation("net.mamoe:mirai-core:1.2.2")
+    implementation("net.mamoe:mirai-console:1.0-M3")
 
     implementation("org.mozilla:rhino:1.7.12")
     implementation("com.squareup.okhttp3:okhttp:4.8.1")

@@ -27,9 +27,12 @@ package org.itxtech.miraijs.bridge
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import net.mamoe.mirai.console.command.*
 import net.mamoe.mirai.console.command.CommandManager.INSTANCE.register
 import net.mamoe.mirai.console.command.CommandManager.INSTANCE.unregister
+import net.mamoe.mirai.console.command.CommandOwner
+import net.mamoe.mirai.console.command.CommandPermission
+import net.mamoe.mirai.console.command.CommandSender
+import net.mamoe.mirai.console.command.RawCommand
 import net.mamoe.mirai.event.Event
 import net.mamoe.mirai.event.subscribeAlways
 import org.itxtech.miraijs.plugin.JsPlugin
@@ -90,6 +93,8 @@ class Core(private val plugin: JsPlugin) {
         fun exec(): Long
     }
 
+    object JsPluginCommandOwner : CommandOwner
+
     @JvmOverloads
     fun registerCommand(
         cmd: CommandCallback,
@@ -98,11 +103,10 @@ class Core(private val plugin: JsPlugin) {
         cmdUsage: String = "",
         prefixOptional: Boolean = false,
         cmdAlias: List<String> = listOf(),
-        cmdOwner: ConsoleCommandOwner,
         cmdPermission: CommandPermission.Default
     ) {
         object : RawCommand(
-            owner = cmdOwner,
+            owner = JsPluginCommandOwner,
             names = arrayOf(cmdName) + cmdAlias.toList(),
             description = cmdDescription,
             usage = cmdUsage,

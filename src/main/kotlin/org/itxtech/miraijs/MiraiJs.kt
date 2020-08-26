@@ -26,8 +26,11 @@ package org.itxtech.miraijs
 
 import net.mamoe.mirai.console.plugin.jvm.KotlinPlugin
 import org.itxtech.miraijs.plugin.PluginManager
+import java.io.File
 
 object MiraiJs : KotlinPlugin() {
+    val dataFolder: File by lazy { dataFolderPath.toFile() }
+
     private val manager = PluginManager()
 
     override fun onLoad() {
