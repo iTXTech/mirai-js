@@ -25,8 +25,10 @@
 package org.itxtech.miraijs.bridge
 
 import net.mamoe.mirai.Bot
+import okhttp3.MediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
 import java.io.File
 import java.nio.charset.Charset
@@ -66,6 +68,8 @@ object HttpUtil {
     fun newClient(): OkHttpClient.Builder = OkHttpClient.Builder()
 
     fun newRequest(): Request.Builder = Request.Builder()
+
+    fun newRequestBody(str: String, type: MediaType? = null) = str.toRequestBody(type)
 }
 
 object StorageUtil {
@@ -75,7 +79,7 @@ object StorageUtil {
     }
 
     @JvmOverloads
-    fun readText(file: File, charset: Charset = Charsets.UTF_8): String {
-        return file.readText(charset)
-    }
+    fun readText(file: File, charset: Charset = Charsets.UTF_8) = file.readText(charset)
+
+    fun writeBytes(file: File, bytes: ByteArray) = file.writeBytes(bytes)
 }
