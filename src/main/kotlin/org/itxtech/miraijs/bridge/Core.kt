@@ -30,11 +30,14 @@ import kotlinx.coroutines.launch
 import net.mamoe.mirai.console.command.CommandManager.INSTANCE.register
 import net.mamoe.mirai.console.command.CommandManager.INSTANCE.unregister
 import net.mamoe.mirai.console.command.CommandOwner
-import net.mamoe.mirai.console.command.CommandPermission
 import net.mamoe.mirai.console.command.CommandSender
 import net.mamoe.mirai.console.command.RawCommand
+import net.mamoe.mirai.console.permission.Permission
+import net.mamoe.mirai.console.permission.PermissionId
+import net.mamoe.mirai.console.permission.PermissionService
 import net.mamoe.mirai.event.Event
 import net.mamoe.mirai.event.subscribeAlways
+import net.mamoe.mirai.message.data.MessageChain
 import org.itxtech.miraijs.plugin.JsPlugin
 
 class Core(private val plugin: JsPlugin) {
@@ -93,7 +96,16 @@ class Core(private val plugin: JsPlugin) {
         fun exec(): Long
     }
 
-    object JsPluginCommandOwner : CommandOwner
+    object JsPluginCommandOwner : CommandOwner {
+        override val parentPermission: Permission by lazy {
+            PermissionService.INSTANCE.register(
+                permissionId("*"),
+                "The parent of Mirai Js commands"
+            )
+        }
+
+        override fun permissionId(name: String): PermissionId = PermissionId("miraijs", "command.$name")
+    }
 
     @JvmOverloads
     fun registerCommand(
@@ -103,7 +115,7 @@ class Core(private val plugin: JsPlugin) {
         cmdUsage: String = "",
         prefixOptional: Boolean = false,
         cmdAlias: List<String> = listOf(),
-        cmdPermission: CommandPermission.Default
+        cmdPermission: Permission = JsPluginCommandOwner.parentPermission
     ) {
         object : RawCommand(
             owner = JsPluginCommandOwner,
@@ -111,10 +123,10 @@ class Core(private val plugin: JsPlugin) {
             description = cmdDescription,
             usage = cmdUsage,
             prefixOptional = prefixOptional,
-            permission = cmdPermission
+            parentPermission = cmdPermission
         ) {
-            override suspend fun CommandSender.onCommand(args: Array<out Any>) {
-                if (!cmd.call(this, args.map { return@map it.toString() })) {
+            override suspend fun CommandSender.onCommand(args: MessageChain) {
+                if (!cmd.call(this, args.contentToString().split(" "))) {
                     sendMessage(usage)
                 }
             }

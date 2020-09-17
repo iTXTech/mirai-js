@@ -24,16 +24,21 @@
 
 package org.itxtech.miraijs
 
+import net.mamoe.mirai.console.extension.PluginComponentStorage
+import net.mamoe.mirai.console.plugin.jvm.JvmPluginDescriptionBuilder
 import net.mamoe.mirai.console.plugin.jvm.KotlinPlugin
 import org.itxtech.miraijs.plugin.PluginManager
-import java.io.File
 
-object MiraiJs : KotlinPlugin() {
-    val dataFolder: File by lazy { dataFolderPath.toFile() }
-
+object MiraiJs : KotlinPlugin(
+    JvmPluginDescriptionBuilder("MiraiJs", "1.1.0-rc.2")
+        .id("org.itxtech.miraijs")
+        .info("强大的 Mirai JavaScript 插件运行时。")
+        .author("iTX Technologies")
+        .build()
+) {
     private val manager = PluginManager()
 
-    override fun onLoad() {
+    override fun PluginComponentStorage.onLoad() {
         manager.loadPlugins()
         manager.registerCommand()
     }

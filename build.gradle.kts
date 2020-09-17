@@ -1,10 +1,10 @@
 plugins {
-    kotlin("jvm") version "1.4.0"
-    kotlin("plugin.serialization") version "1.4.0"
+    kotlin("jvm") version "1.4.10"
+    kotlin("plugin.serialization") version "1.4.10"
 }
 
 group = "org.itxtech"
-version = "1.1.0-rc.1"
+version = "1.1.0-rc.2"
 
 kotlin {
     sourceSets {
@@ -24,11 +24,11 @@ repositories {
 dependencies {
     api("org.jetbrains.kotlinx:atomicfu:0.14.4")
 
-    implementation("net.mamoe:mirai-core:1.2.2")
-    implementation("net.mamoe:mirai-console:1.0-M3")
+    implementation("net.mamoe:mirai-core:1.3.0")
+    implementation("net.mamoe:mirai-console:1.0-M4")
 
-    implementation("org.mozilla:rhino:1.7.12")
-    implementation("com.squareup.okhttp3:okhttp:4.8.1")
+    implementation("org.mozilla:rhino:1.7.13")
+    implementation("com.squareup.okhttp3:okhttp:4.9.0")
 }
 
 tasks.named<Jar>("jar") {
@@ -51,5 +51,6 @@ tasks.named<Jar>("jar") {
 }
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
+    kotlinOptions.freeCompilerArgs = listOf("-Xjvm-default=enable")
     kotlinOptions.jvmTarget = "1.8"
 }
