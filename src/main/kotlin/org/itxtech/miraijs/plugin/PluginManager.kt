@@ -28,6 +28,7 @@ import kotlinx.atomicfu.atomic
 import net.mamoe.mirai.console.command.CommandManager.INSTANCE.register
 import net.mamoe.mirai.console.command.CommandSender
 import net.mamoe.mirai.console.command.CompositeCommand
+import net.mamoe.mirai.console.util.ConsoleExperimentalApi
 import org.itxtech.miraijs.MiraiJs
 import java.io.File
 
@@ -96,6 +97,7 @@ open class PluginManager {
         }
     }
 
+    @OptIn(ConsoleExperimentalApi::class)
     class JpmCommand(private val manager: PluginManager) : CompositeCommand(
         MiraiJs, "jpm",
         description = "Mirai Js 插件管理器"

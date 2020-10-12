@@ -119,7 +119,8 @@ class Core(private val plugin: JsPlugin) {
     ) {
         object : RawCommand(
             owner = JsPluginCommandOwner,
-            names = arrayOf(cmdName) + cmdAlias.toList(),
+            primaryName = cmdName,
+            secondaryNames = cmdAlias.toTypedArray(),
             description = cmdDescription,
             usage = cmdUsage,
             prefixOptional = prefixOptional,
