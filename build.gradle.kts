@@ -68,7 +68,7 @@ bintray {
         repo = "mirai"
         name = "mirai-js"
         userOrg = "itxtech"
-        setLicenses("AGPLv3")
+        setLicenses("AGPL-V3")
         publicDownloadNumbers = true
         vcsUrl = vcs
     }
