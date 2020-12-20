@@ -35,13 +35,9 @@ import java.nio.charset.Charset
 import java.util.concurrent.TimeUnit
 
 object BotUtil {
-    fun getAll(): List<Bot> {
-        return Bot.botInstances
-    }
+    fun getAll() = Bot.instances
 
-    fun get(qq: Long = 0): Bot {
-        return if (qq == 0L) Bot.botInstances.first() else Bot.getInstance(qq)
-    }
+    fun get(qq: Long = 0) = if (qq == 0L) Bot.instances.first() else Bot.getInstance(qq)
 }
 
 object HttpUtil {

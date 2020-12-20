@@ -1,8 +1,9 @@
 plugins {
-    kotlin("jvm") version "1.4.10"
-    kotlin("plugin.serialization") version "1.4.10"
+    kotlin("jvm") version "1.4.20"
+    kotlin("plugin.serialization") version "1.4.20"
     id("com.jfrog.bintray") version "1.8.5"
     `maven-publish`
+    id("net.mamoe.mirai-console") version "2.0-M1"
 }
 
 group = "org.itxtech"
@@ -20,16 +21,14 @@ kotlin {
 }
 
 repositories {
-    maven("https://mirrors.huaweicloud.com/repository/maven")
     maven("https://dl.bintray.com/him188moe/mirai")
+    maven("https://dl.bintray.com/mamoe/kotlin-jvm-blocking-bridge")
+    maven("https://maven.aliyun.com/repository/public")
     maven("https://dl.bintray.com/kotlin/kotlin-eap")
 }
 
 dependencies {
-    api("org.jetbrains.kotlinx:atomicfu:0.14.4")
-
-    implementation("net.mamoe:mirai-core:1.3.2")
-    implementation("net.mamoe:mirai-console:1.0-RC-dev-29")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.0.1")
 
     implementation("org.mozilla:rhino:1.7.13")
     implementation("com.squareup.okhttp3:okhttp:4.9.0")
@@ -43,7 +42,8 @@ tasks.named<Jar>("jar") {
     }
 
     val list = ArrayList<Any>()
-    configurations.compileClasspath.get().forEach { file ->
+
+    configurations.compileClasspath.get().copyRecursive().forEach { file ->
         arrayOf("rhino", "squareup").forEach {
             if (file.absolutePath.contains(it)) {
                 list.add(zipTree(file))
@@ -55,7 +55,6 @@ tasks.named<Jar>("jar") {
 }
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-    kotlinOptions.freeCompilerArgs = listOf("-Xjvm-default=enable")
     kotlinOptions.jvmTarget = "1.8"
 }
 
