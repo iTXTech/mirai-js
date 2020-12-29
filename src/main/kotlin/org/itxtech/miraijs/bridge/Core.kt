@@ -36,7 +36,7 @@ import net.mamoe.mirai.console.permission.Permission
 import net.mamoe.mirai.console.permission.PermissionId
 import net.mamoe.mirai.console.permission.PermissionService
 import net.mamoe.mirai.event.Event
-import net.mamoe.mirai.event.subscribeAlways
+import net.mamoe.mirai.event.globalEventChannel
 import net.mamoe.mirai.message.data.MessageChain
 import org.itxtech.miraijs.plugin.JsPlugin
 
@@ -54,7 +54,7 @@ class Core(private val plugin: JsPlugin) {
     }
 
     fun attach() {
-        plugin.subscribeAlways<Event> {
+        plugin.globalEventChannel().subscribeAlways<Event> {
             if (plugin.enabled) {
                 events[javaClass]?.forEach {
                     it.call(this)
