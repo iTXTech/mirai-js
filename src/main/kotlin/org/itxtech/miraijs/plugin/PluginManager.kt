@@ -100,7 +100,7 @@ open class PluginManager {
     @OptIn(ConsoleExperimentalApi::class)
     class JpmCommand(private val manager: PluginManager) : CompositeCommand(
         MiraiJs, "jpm",
-        description = "Mirai Js 插件管理器"
+        description = "MiraiJs插件管理器"
     ) {
         private fun StringBuilder.getCommonPluginInfo(p: JsPlugin) {
             appendLine("Id：${p.id} 文件：${p.file.name} 名称：${p.pluginInfo.name} 状态：${if (p.enabled) "启用" else "停用"} 版本：${p.pluginInfo.version} 作者：${p.pluginInfo.author}")
