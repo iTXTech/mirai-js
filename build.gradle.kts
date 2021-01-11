@@ -4,6 +4,7 @@ plugins {
     id("com.jfrog.bintray") version "1.8.5"
     `maven-publish`
     id("net.mamoe.mirai-console") version "2.0-M2"
+    id("net.mamoe.kotlin-jvm-blocking-bridge") version "1.5.1"
 }
 
 group = "org.itxtech"
@@ -28,10 +29,19 @@ repositories {
 }
 
 dependencies {
+    testImplementation(kotlin("test-junit5"))
+    testImplementation("org.junit.jupiter:junit-jupiter-api:5.6.0")
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.6.0")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.0.1")
-
     implementation("org.mozilla:rhino:1.7.13")
     implementation("com.squareup.okhttp3:okhttp:4.9.0")
+}
+
+tasks.test {
+    useJUnitPlatform()
+    testLogging {
+        events("passed", "skipped", "failed")
+    }
 }
 
 tasks.named<Jar>("jar") {
