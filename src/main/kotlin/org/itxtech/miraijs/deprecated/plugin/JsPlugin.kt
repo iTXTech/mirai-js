@@ -22,11 +22,11 @@
  *
  */
 
-package org.itxtech.miraijs.plugin
+package org.itxtech.miraijs.deprecated.plugin
 
 import kotlinx.coroutines.*
 import org.itxtech.miraijs.MiraiJs
-import org.itxtech.miraijs.bridge.*
+import org.itxtech.miraijs.deprecated.bridge.*
 import org.mozilla.javascript.*
 import java.io.File
 import kotlin.coroutines.CoroutineContext

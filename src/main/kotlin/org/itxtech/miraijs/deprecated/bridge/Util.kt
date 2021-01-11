@@ -22,7 +22,7 @@
  *
  */
 
-package org.itxtech.miraijs.bridge
+package org.itxtech.miraijs.deprecated.bridge
 
 import net.mamoe.mirai.Bot
 import okhttp3.MediaType

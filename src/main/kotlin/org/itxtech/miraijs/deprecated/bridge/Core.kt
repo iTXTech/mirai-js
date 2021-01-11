@@ -22,7 +22,7 @@
  *
  */
 
-package org.itxtech.miraijs.bridge
+package org.itxtech.miraijs.deprecated.bridge
 
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -38,7 +38,7 @@ import net.mamoe.mirai.console.permission.PermissionService
 import net.mamoe.mirai.event.Event
 import net.mamoe.mirai.event.globalEventChannel
 import net.mamoe.mirai.message.data.MessageChain
-import org.itxtech.miraijs.plugin.JsPlugin
+import org.itxtech.miraijs.deprecated.plugin.JsPlugin
 
 class Core(private val plugin: JsPlugin) {
     private val events = hashMapOf<Class<Event>, ArrayList<JsCallback>>()

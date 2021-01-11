@@ -22,7 +22,7 @@
  *
  */
 
-package org.itxtech.miraijs.bridge
+package org.itxtech.miraijs.deprecated.bridge
 
 class PluginEvent {
     var onLoad: Runnable? = null

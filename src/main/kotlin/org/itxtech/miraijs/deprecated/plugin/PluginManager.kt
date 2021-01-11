@@ -22,7 +22,7 @@
  *
  */
 
-package org.itxtech.miraijs.plugin
+package org.itxtech.miraijs.deprecated.plugin
 
 import kotlinx.atomicfu.atomic
 import net.mamoe.mirai.console.command.CommandManager.INSTANCE.register

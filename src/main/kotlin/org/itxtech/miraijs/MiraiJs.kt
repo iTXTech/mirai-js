@@ -27,7 +27,6 @@ package org.itxtech.miraijs
 import net.mamoe.mirai.console.extension.PluginComponentStorage
 import net.mamoe.mirai.console.plugin.jvm.JvmPluginDescriptionBuilder
 import net.mamoe.mirai.console.plugin.jvm.KotlinPlugin
-import org.itxtech.miraijs.plugin.PluginManager
 
 object MiraiJs : KotlinPlugin(
     JvmPluginDescriptionBuilder("org.itxtech.miraijs.MiraiJs", "1.2.1")
@@ -36,18 +35,16 @@ object MiraiJs : KotlinPlugin(
         .author("iTX Technologies")
         .build()
 ) {
-    private val manager = PluginManager()
 
     override fun PluginComponentStorage.onLoad() {
-        manager.loadPlugins()
-        manager.registerCommand()
+
     }
 
     override fun onEnable() {
-        manager.enablePlugins()
+
     }
 
     override fun onDisable() {
-        manager.disablePlugins()
+
     }
 }

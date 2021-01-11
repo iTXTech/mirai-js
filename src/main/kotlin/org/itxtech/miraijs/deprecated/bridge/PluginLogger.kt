@@ -22,10 +22,10 @@
  *
  */
 
-package org.itxtech.miraijs.bridge
+package org.itxtech.miraijs.deprecated.bridge
 
 import org.itxtech.miraijs.MiraiJs
-import org.itxtech.miraijs.plugin.JsPlugin
+import org.itxtech.miraijs.deprecated.plugin.JsPlugin
 import org.mozilla.javascript.IdScriptableObject
 import org.mozilla.javascript.NativeJavaObject
 
