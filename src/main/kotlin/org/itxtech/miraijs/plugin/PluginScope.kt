@@ -36,7 +36,7 @@ class PluginScope(val src: String) : CoroutineScope {
         scope = ImporterTopLevel()
         scope.initStandardObjects(ctx, false)
         //init internal object
-        scope.insertLib(KotlinCoroutineLib)
+        scope.importLib(KotlinCoroutineLib)
         //load script file
         script = ctx.compileString(src, "TestJsPlugin", 1, null)
         script.exec(ctx, scope)

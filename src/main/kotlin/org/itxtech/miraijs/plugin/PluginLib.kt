@@ -8,6 +8,8 @@ abstract class PluginLib {
     abstract val nameInJs: String
 }
 
-fun <L : PluginLib> Scriptable.insertLib(lib: L) {
+
+@Suppress("NOTHING_TO_INLINE")
+inline fun <T : PluginLib> Scriptable.importLib(lib: T) {
     ScriptableObject.putProperty(this, lib.nameInJs, Context.javaToJS(lib, this))
 }
