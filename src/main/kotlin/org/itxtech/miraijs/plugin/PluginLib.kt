@@ -6,10 +6,9 @@ import org.mozilla.javascript.ScriptableObject
 
 abstract class PluginLib {
     abstract val nameInJs: String
-}
 
-
-@Suppress("NOTHING_TO_INLINE")
-inline fun <T : PluginLib> Scriptable.importLib(lib: T) {
-    ScriptableObject.putProperty(this, lib.nameInJs, Context.javaToJS(lib, this))
+    @Suppress("UNUSED_PARAMETER", "NOTHING_TO_INLINE")
+    open fun import(scope: Scriptable, context: Context) {
+        ScriptableObject.putProperty(scope, nameInJs, Context.javaToJS(this, scope))
+    }
 }
