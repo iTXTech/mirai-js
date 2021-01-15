@@ -79,9 +79,9 @@ object MiraiLib : PluginLib() {
             ) = case(equals, ignoreCase = false, trim = true, samCallback)
 
             fun match(
-                regex: Regex,
+                regex: org.mozilla.javascript.regexp.NativeRegExp,
                 samCallback: MiraiLambdaInterface.MessageListenerSAMInterface<MessageEvent, MatchResult, Unit>
-            ) = self.matching(regex) { samCallback.call(this, it) }
+            ) = self.matching(Regex(regex.toString())) { samCallback.call(this, it) }
 
             fun contains(
                 equals: String, ignoreCase: Boolean, trim: Boolean,
