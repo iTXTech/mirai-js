@@ -5,6 +5,8 @@ import kotlinx.coroutines.ObsoleteCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.newSingleThreadContext
 import org.itxtech.miraijs.plugin.libs.KotlinCoroutineLib
+import org.itxtech.miraijs.plugin.libs.MiraiLib
+import org.itxtech.miraijs.plugin.libs.OkHttpLib
 import org.mozilla.javascript.Context
 import org.mozilla.javascript.ImporterTopLevel
 import org.mozilla.javascript.Script
@@ -36,7 +38,13 @@ class PluginScope(val src: String) : CoroutineScope {
         scope = ImporterTopLevel()
         scope.initStandardObjects(ctx, false)
         //init internal object
-        scope.importLib(KotlinCoroutineLib)
+        scope.also { sc ->
+            ctx.also { cx ->
+                KotlinCoroutineLib.import(sc, cx)
+                MiraiLib().import(sc, cx)
+                OkHttpLib.import(sc, cx)
+            }
+        }
         //load script file
         script = ctx.compileString(src, "TestJsPlugin", 1, null)
         script.exec(ctx, scope)
