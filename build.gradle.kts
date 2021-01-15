@@ -3,8 +3,8 @@ plugins {
     kotlin("plugin.serialization") version "1.4.21"
     id("com.jfrog.bintray") version "1.8.5"
     `maven-publish`
-    id("net.mamoe.mirai-console") version "2.0-M2"
-    id("net.mamoe.kotlin-jvm-blocking-bridge") version "1.5.1"
+    id("net.mamoe.mirai-console") version "2.0-RC"
+    id("net.mamoe.kotlin-jvm-blocking-bridge") version "1.6.0"
 }
 
 group = "org.itxtech"
