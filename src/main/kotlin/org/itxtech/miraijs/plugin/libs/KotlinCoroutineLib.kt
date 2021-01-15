@@ -26,60 +26,60 @@ object KotlinCoroutineLib : PluginLib() {
     @JvmField
     val Dispatchers = kotlinx.coroutines.Dispatchers
 
-    class CoroutineContextJsImpl(val context: kotlin.coroutines.CoroutineContext) {
-        fun plus(other: CoroutineContextJsImpl) = CoroutineContextJsImpl(context.plus(other.context))
-        fun isActive() = context.isActive
-        fun getJob() = JobJsImpl(context.job)
-        fun cancel(cause: String) = context.cancel(CancellationException(cause))
-        fun cancelChildren(cause: String) = context.cancelChildren(CancellationException(cause))
-        fun ensureActive() = context.ensureActive()
+    class CoroutineContextJsImpl(@JvmField val self: kotlin.coroutines.CoroutineContext) {
+        fun plus(other: CoroutineContextJsImpl) = CoroutineContextJsImpl(self.plus(other.self))
+        fun isActive() = self.isActive
+        fun getJob() = JobJsImpl(self.job)
+        fun cancel(cause: String) = self.cancel(CancellationException(cause))
+        fun cancelChildren(cause: String) = self.cancelChildren(CancellationException(cause))
+        fun ensureActive() = self.ensureActive()
     }
 
     @JvmField
     val continuation = object {
-        fun <T> create(samCallback: FunctionInterfaces.ContinuationResumeWithSAMCallback<T>): ContinuationJsImpl<T> =
+        fun <T> create(samCallback: KtCoroutineLambdaInterface.ContinuationResumeWithSAMCallback<T>): ContinuationJsImpl<T> =
             ContinuationJsImpl(kotlin.coroutines.Continuation(kotlin.coroutines.EmptyCoroutineContext) {
                 samCallback.call(it)
             })
     }
 
-    class ContinuationJsImpl<T>(val continuation: kotlin.coroutines.Continuation<T>) {
-        fun resumeWithSuccess(value: T) = continuation.resumeWith(Result.success(value))
-        fun resumeWithFailure(reason: String) = continuation.resumeWith(Result.failure(Throwable(reason)))
-        fun resume(value: T) = continuation.resume(value)
-        fun getContext() = CoroutineContextJsImpl(continuation.context)
+    class ContinuationJsImpl<T>(@JvmField val self: kotlin.coroutines.Continuation<T>) {
+        fun resumeWithSuccess(value: T) = self.resumeWith(Result.success(value))
+        fun resumeWithFailure(reason: String) = self.resumeWith(Result.failure(Throwable(reason)))
+        fun resume(value: T) = self.resume(value)
+        fun getContext() = CoroutineContextJsImpl(self.context)
     }
 
     fun createSupervisorJob(parent: kotlinx.coroutines.Job?) =
         SupervisorJobJsImpl(kotlinx.coroutines.SupervisorJob(parent))
 
     fun createSupervisorJob() = createSupervisorJob(null)
-    class SupervisorJobJsImpl(val supervisorJob: kotlinx.coroutines.CompletableJob) {
+    class SupervisorJobJsImpl(@JvmField val self: kotlinx.coroutines.CompletableJob) {
         @JvmBlockingBridge
-        suspend fun join() = supervisorJob.join()
-        fun cancel(reason: String) = supervisorJob.cancel(cause = kotlinx.coroutines.CancellationException(reason))
+        suspend fun join() = self.join()
+        fun cancel(reason: String) = self.cancel(cause = kotlinx.coroutines.CancellationException(reason))
 
         @JvmBlockingBridge
-        suspend fun cancelAndJoin() = supervisorJob.cancelAndJoin()
-        fun isActive() = supervisorJob.isActive
-        fun isCanceled() = supervisorJob.isCancelled
-        fun isCompleted() = supervisorJob.isCompleted
-        fun complete() = supervisorJob.complete()
-        fun completeExceptionally(reason: String) = supervisorJob.completeExceptionally(Throwable(reason))
+        suspend fun cancelAndJoin() = self.cancelAndJoin()
+        fun isActive() = self.isActive
+        fun isCanceled() = self.isCancelled
+        fun isCompleted() = self.isCompleted
+        fun complete() = self.complete()
+        fun completeExceptionally(reason: String) = self.completeExceptionally(Throwable(reason))
     }
 
     fun createJob(parent: kotlinx.coroutines.Job?) = JobJsImpl(kotlinx.coroutines.Job(parent))
 
-    class JobJsImpl(val job: kotlinx.coroutines.Job) {
+    class JobJsImpl(@JvmField val self: kotlinx.coroutines.Job) {
         @JvmBlockingBridge
-        suspend fun join() = job.join()
-        fun cancel(reason: String) = job.cancel(cause = kotlinx.coroutines.CancellationException(reason))
+        suspend fun join() = self.join()
+        fun cancel(reason: String) = self.cancel(cause = kotlinx.coroutines.CancellationException(reason))
 
         @JvmBlockingBridge
-        suspend fun cancelAndJoin() = job.cancelAndJoin()
-        fun isActive() = job.isActive
-        fun isCanceled() = job.isCancelled
-        fun isCompleted() = job.isCompleted
+        suspend fun cancelAndJoin() = self.cancelAndJoin()
+        fun isActive() = self.isActive
+        fun isCanceled() = self.isCancelled
+        fun isCompleted() = self.isCompleted
     }
 
     fun createJob() = createJob(null)
@@ -95,15 +95,15 @@ object KotlinCoroutineLib : PluginLib() {
         kotlinx.coroutines.CoroutineScope(coroutineContext)
 
     @JvmBlockingBridge
-    suspend fun coroutineScope(samCallback: FunctionInterfaces.CoroutineScopeSAMCallback) =
+    suspend fun coroutineScope(samCallback: KtCoroutineLambdaInterface.CoroutineScopeSAMCallback) =
         kotlinx.coroutines.coroutineScope { samCallback.call(this) }
 
     @JvmBlockingBridge
-    suspend fun supervisorScope(samCallback: FunctionInterfaces.CoroutineScopeSAMCallback) =
+    suspend fun supervisorScope(samCallback: KtCoroutineLambdaInterface.CoroutineScopeSAMCallback) =
         kotlinx.coroutines.supervisorScope { samCallback.call(this) }
 
     @JvmBlockingBridge
-    suspend fun <T> suspendCoroutine(samCallback: FunctionInterfaces.ContinuationSAMCallback<T>): T =
+    suspend fun <T> suspendCoroutine(samCallback: KtCoroutineLambdaInterface.ContinuationSAMCallback<T>): T =
         kotlin.coroutines.suspendCoroutine { samCallback.call(ContinuationJsImpl(it)) }
 
     @JvmBlockingBridge
@@ -111,23 +111,23 @@ object KotlinCoroutineLib : PluginLib() {
 
     @JvmBlockingBridge
     suspend fun yield() = kotlinx.coroutines.yield()
-    fun launchFromGlobalScope(samCallback: FunctionInterfaces.CoroutineScopeSAMCallback) =
+    fun launchFromGlobalScope(samCallback: KtCoroutineLambdaInterface.CoroutineScopeSAMCallback) =
         kotlinx.coroutines.GlobalScope.launch { samCallback.call(this) }
 
     fun launch(
         coroutineScope: kotlinx.coroutines.CoroutineScope,
-        samCallback: FunctionInterfaces.CoroutineScopeSAMCallback
+        samCallback: KtCoroutineLambdaInterface.CoroutineScopeSAMCallback
     ) =
         coroutineScope.launch(coroutineScope.coroutineContext) { samCallback.call(this) }
 
     fun <T> asyncFromGlobalScope(
-        samCallback: FunctionInterfaces.CoroutineScopeSAMCallbackWithReturnedValue<T>
+        samCallback: KtCoroutineLambdaInterface.CoroutineScopeSAMCallbackWithReturnedValue<T>
     ) = DeferredJsImpl(kotlinx.coroutines.GlobalScope.async { samCallback.call(this) })
 
 
     fun <T> async(
         coroutineScope: kotlinx.coroutines.CoroutineScope,
-        samCallback: FunctionInterfaces.CoroutineScopeSAMCallbackWithReturnedValue<T>
+        samCallback: KtCoroutineLambdaInterface.CoroutineScopeSAMCallbackWithReturnedValue<T>
     ) = DeferredJsImpl(coroutineScope.async(coroutineScope.coroutineContext) { samCallback.call(this) })
 
     class DeferredJsImpl<T>(private val deferred: kotlinx.coroutines.Deferred<T>) {
@@ -142,7 +142,7 @@ object KotlinCoroutineLib : PluginLib() {
     @JvmBlockingBridge
     suspend fun <T> withContext(
         coroutineContext: kotlin.coroutines.CoroutineContext,
-        samCallback: FunctionInterfaces.CoroutineScopeSAMCallbackWithReturnedValue<T>
+        samCallback: KtCoroutineLambdaInterface.CoroutineScopeSAMCallbackWithReturnedValue<T>
     ) = kotlinx.coroutines.withContext(coroutineContext) { samCallback.call(this) }
 
     /* kotlin.coroutines.withTimeout doesn't work for Rhino JavaScript caller. */
@@ -150,7 +150,7 @@ object KotlinCoroutineLib : PluginLib() {
     @JvmBlockingBridge
     suspend fun <T> withTimeout(
         timeMills: Long,
-        samCallback: FunctionInterfaces.CoroutineScopeSAMCallbackWithReturnedValue<T>
+        samCallback: KtCoroutineLambdaInterface.CoroutineScopeSAMCallbackWithReturnedValue<T>
     ) = kotlinx.coroutines.coroutineScope functionReturn@{
         val deferred = async { samCallback.call(this) }.also { this.launch { it.await() } }
         delay(timeMills)
@@ -184,13 +184,13 @@ object KotlinCoroutineLib : PluginLib() {
         fun <T> createChannel(capacity: Int): ChannelJsImpl<T> =
             createChannel(capacity = capacity, BufferOverflow.SUSPEND, null)
 
-        fun <T> createChannel(samCallback: FunctionInterfaces.ChannelOnDeliverElementSAMCallback<T>): ChannelJsImpl<T> =
+        fun <T> createChannel(samCallback: KtCoroutineLambdaInterface.ChannelOnDeliverElementSAMCallback<T>): ChannelJsImpl<T> =
             createChannel(ChannelFactory.RENDEZVOUS, BufferOverflow.SUSPEND, samCallback)
 
         fun <T> createChannel(
             capacity: Int = ChannelFactory.RENDEZVOUS,
             onBufferOverflow: kotlinx.coroutines.channels.BufferOverflow,
-            samCallback: FunctionInterfaces.ChannelOnDeliverElementSAMCallback<T>?
+            samCallback: KtCoroutineLambdaInterface.ChannelOnDeliverElementSAMCallback<T>?
         ): ChannelJsImpl<T> =
             ChannelJsImpl(
                 kotlinx.coroutines.channels.Channel(
@@ -201,18 +201,18 @@ object KotlinCoroutineLib : PluginLib() {
             )
     }
 
-    class ChannelJsImpl<T>(val channel: kotlinx.coroutines.channels.Channel<T>) {
+    class ChannelJsImpl<T>(@JvmField val self: kotlinx.coroutines.channels.Channel<T>) {
         @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
-        fun isClosedForReceive() = channel.isClosedForReceive
+        fun isClosedForReceive() = self.isClosedForReceive
 
         @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
-        fun isClosedForSend() = channel.isClosedForSend
+        fun isClosedForSend() = self.isClosedForSend
 
         @JvmBlockingBridge
-        suspend fun receive(samCallback: FunctionInterfaces.ChannelOnDeliverElementSAMCallback<T>) {
+        suspend fun receive(samCallback: KtCoroutineLambdaInterface.ChannelOnDeliverElementSAMCallback<T>) {
             while (!isClosedForReceive()) {
                 try {
-                    samCallback.call(channel.receive())
+                    samCallback.call(self.receive())
                 } catch (ex: Exception) {
                     return
                 }
@@ -220,13 +220,13 @@ object KotlinCoroutineLib : PluginLib() {
         }
 
         @JvmBlockingBridge
-        suspend fun send(value: T) = channel.send(value)
-        fun close() = channel.close()
+        suspend fun send(value: T) = self.send(value)
+        fun close() = self.close()
     }
 
     @JvmField
     val flow = object {
-        fun <T> createFlow(samCallback: FunctionInterfaces.FlowActionSAMCallback<T>): FlowJsImpl<T> =
+        fun <T> createFlow(samCallback: KtCoroutineLambdaInterface.FlowActionSAMCallback<T>): FlowJsImpl<T> =
             FlowJsImpl(flow { samCallback.call(FlowCollectorJsImpl(this)) })
 
         fun <T> flowOf(elements: Array<T>) = FlowJsImpl(flow { repeat(elements.count()) { emit(elements[it]) } })
@@ -237,82 +237,82 @@ object KotlinCoroutineLib : PluginLib() {
         suspend fun emit(value: T) = flowCollector.emit(value)
     }
 
-    class FlowJsImpl<T>(private val flow: Flow<T>) {
-        fun onEach(samCallback: FunctionInterfaces.FlowUpstreamOnEachSAMCallback<T>) =
-            FlowJsImpl(flow.onEach { samCallback.call(it) })
+    class FlowJsImpl<T>(@JvmField val self: Flow<T>) {
+        fun onEach(samCallback: KtCoroutineLambdaInterface.FlowUpstreamOnEachSAMCallback<T>) =
+            FlowJsImpl(self.onEach { samCallback.call(it) })
 
         /* Every transform operation returns a new FlowJsImpl,
         * because internal transform creates a new Flow */
-        fun <R> map(samCallback: FunctionInterfaces.FlowTransformSAMCallbackChangeMapType<T, R>) =
-            FlowJsImpl(flow.map { samCallback.call(it) })
+        fun <R> map(samCallback: KtCoroutineLambdaInterface.FlowTransformSAMCallbackChangeMapType<T, R>) =
+            FlowJsImpl(self.map { samCallback.call(it) })
 
-        fun filter(samCallback: FunctionInterfaces.FlowTransformSAMCallbackChangeJudgeType<T>) =
-            FlowJsImpl(flow.filter { samCallback.call(it) })
+        fun filter(samCallback: KtCoroutineLambdaInterface.FlowTransformSAMCallbackChangeJudgeType<T>) =
+            FlowJsImpl(self.filter { samCallback.call(it) })
 
-        fun filterNot(samCallback: FunctionInterfaces.FlowTransformSAMCallbackChangeJudgeType<T>) =
-            FlowJsImpl(flow.filterNot { samCallback.call(it) })
+        fun filterNot(samCallback: KtCoroutineLambdaInterface.FlowTransformSAMCallbackChangeJudgeType<T>) =
+            FlowJsImpl(self.filterNot { samCallback.call(it) })
 
-        fun take(count: Int) = FlowJsImpl(flow.take(count))
-        fun takeWhile(samCallback: FunctionInterfaces.FlowTransformSAMCallbackChangeJudgeType<T>) =
-            FlowJsImpl(flow.takeWhile { samCallback.call(it) })
+        fun take(count: Int) = FlowJsImpl(self.take(count))
+        fun takeWhile(samCallback: KtCoroutineLambdaInterface.FlowTransformSAMCallbackChangeJudgeType<T>) =
+            FlowJsImpl(self.takeWhile { samCallback.call(it) })
 
-        fun drop(count: Int) = FlowJsImpl(flow.drop(count))
-        fun dropWhile(samCallback: FunctionInterfaces.FlowTransformSAMCallbackChangeJudgeType<T>) =
-            FlowJsImpl(flow.dropWhile { samCallback.call(it) })
+        fun drop(count: Int) = FlowJsImpl(self.drop(count))
+        fun dropWhile(samCallback: KtCoroutineLambdaInterface.FlowTransformSAMCallbackChangeJudgeType<T>) =
+            FlowJsImpl(self.dropWhile { samCallback.call(it) })
 
         fun buffer(
             capacity: Int,
             onBufferOverflow: kotlinx.coroutines.channels.BufferOverflow
-        ) = FlowJsImpl(flow.buffer(capacity, onBufferOverflow))
+        ) = FlowJsImpl(self.buffer(capacity, onBufferOverflow))
 
-        fun buffer() = FlowJsImpl(flow.buffer())
-        fun conflate() = FlowJsImpl(flow.conflate())
+        fun buffer() = FlowJsImpl(self.buffer())
+        fun conflate() = FlowJsImpl(self.conflate())
 
-        fun flowOn(context: CoroutineContextJsImpl) = FlowJsImpl(flow.flowOn(context.context))
-        fun launchIn(scope: kotlinx.coroutines.CoroutineScope) = JobJsImpl(flow.launchIn(scope))
-        fun catch(samCallback: FunctionInterfaces.FlowTransformErrorSAMCallback<T>) =
-            FlowJsImpl(flow.catch { samCallback.call(FlowCollectorJsImpl(this), it) })
-
-        @kotlinx.coroutines.FlowPreview
-        fun debounce(timeoutMills: Long) = FlowJsImpl(flow.debounce(timeoutMills))
+        fun flowOn(context: CoroutineContextJsImpl) = FlowJsImpl(self.flowOn(context.self))
+        fun launchIn(scope: kotlinx.coroutines.CoroutineScope) = JobJsImpl(self.launchIn(scope))
+        fun catch(samCallback: KtCoroutineLambdaInterface.FlowTransformErrorSAMCallback<T>) =
+            FlowJsImpl(self.catch { samCallback.call(FlowCollectorJsImpl(this), it) })
 
         @kotlinx.coroutines.FlowPreview
-        fun debounce(samCallback: FunctionInterfaces.FlowTransformDebounceSAMCallback<T>) =
-            FlowJsImpl(flow.debounce { samCallback.call(it) })
+        fun debounce(timeoutMills: Long) = FlowJsImpl(self.debounce(timeoutMills))
 
-        fun cancellable() = FlowJsImpl(flow.cancellable())
+        @kotlinx.coroutines.FlowPreview
+        fun debounce(samCallback: KtCoroutineLambdaInterface.FlowTransformDebounceSAMCallback<T>) =
+            FlowJsImpl(self.debounce { samCallback.call(it) })
+
+        fun cancellable() = FlowJsImpl(self.cancellable())
 
         fun <TT, R> combine(
             other: FlowJsImpl<TT>,
-            samCallback: FunctionInterfaces.FlowTransformCombineAndZipSAMCallback<T, TT, R>
-        ) = FlowJsImpl(flow.combine(other.flow) { a: T, b: TT -> samCallback.call(a, b) })
+            samCallback: KtCoroutineLambdaInterface.FlowTransformCombineAndZipSAMCallback<T, TT, R>
+        ) = FlowJsImpl(self.combine(other.self) { a: T, b: TT -> samCallback.call(a, b) })
 
         fun <TT, R> zip(
             other: FlowJsImpl<TT>,
-            samCallback: FunctionInterfaces.FlowTransformCombineAndZipSAMCallback<T, TT, R>
-        ) = FlowJsImpl(flow.zip(other.flow) { a: T, b: TT -> samCallback.call(a, b) })
+            samCallback: KtCoroutineLambdaInterface.FlowTransformCombineAndZipSAMCallback<T, TT, R>
+        ) = FlowJsImpl(self.zip(other.self) { a: T, b: TT -> samCallback.call(a, b) })
 
         @JvmBlockingBridge
-        suspend fun collect(samCallback: FunctionInterfaces.FlowLastOperationSAMCallback<T>) =
-            flow.collect { samCallback.call(it) }
+        suspend fun collect(samCallback: KtCoroutineLambdaInterface.FlowLastOperationSAMCallback<T>) =
+            self.collect { samCallback.call(it) }
 
         @JvmBlockingBridge
-        suspend fun collectIndexed(samCallback: FunctionInterfaces.FlowLastOperationSAMCallbackIndexed<T>) =
-            flow.collectIndexed { index, value -> samCallback.call(index, value) }
+        suspend fun collectIndexed(samCallback: KtCoroutineLambdaInterface.FlowLastOperationSAMCallbackIndexed<T>) =
+            self.collectIndexed { index, value -> samCallback.call(index, value) }
 
         @JvmBlockingBridge
-        suspend fun first() = flow.first()
+        suspend fun first() = self.first()
 
         @JvmBlockingBridge
-        suspend fun first(samCallback: FunctionInterfaces.FlowTransformSAMCallbackChangeJudgeType<T>) =
-            flow.first { samCallback.call(it) }
+        suspend fun first(samCallback: KtCoroutineLambdaInterface.FlowTransformSAMCallbackChangeJudgeType<T>) =
+            self.first { samCallback.call(it) }
 
         @JvmBlockingBridge
-        suspend fun count() = flow.count()
+        suspend fun count() = self.count()
 
         @JvmBlockingBridge
-        suspend fun count(samCallback: FunctionInterfaces.FlowTransformSAMCallbackChangeJudgeType<T>) =
-            flow.count { samCallback.call(it) }
+        suspend fun count(samCallback: KtCoroutineLambdaInterface.FlowTransformSAMCallbackChangeJudgeType<T>) =
+            self.count { samCallback.call(it) }
     }
 
     @JvmField
@@ -321,28 +321,28 @@ object KotlinCoroutineLib : PluginLib() {
         fun createMutex(boolean: Boolean) = MutexJsImpl(kotlinx.coroutines.sync.Mutex(boolean))
     }
 
-    class MutexJsImpl(val mutex: kotlinx.coroutines.sync.Mutex) {
-        fun isLocked() = mutex.isLocked
-        fun holdsLock(objects: Objects) = mutex.holdsLock(objects)
+    class MutexJsImpl(@JvmField val self: kotlinx.coroutines.sync.Mutex) {
+        fun isLocked() = self.isLocked
+        fun holdsLock(objects: Objects) = self.holdsLock(objects)
 
         @JvmBlockingBridge
-        suspend fun lock() = mutex.lock(null)
+        suspend fun lock() = self.lock(null)
 
         @JvmBlockingBridge
-        suspend fun lock(objects: Objects) = mutex.lock(objects)
-        fun tryLock(objects: Objects) = mutex.tryLock(objects)
-        fun unlock() = mutex.unlock(null)
-        fun unlock(objects: Objects) = mutex.unlock(objects)
+        suspend fun lock(objects: Objects) = self.lock(objects)
+        fun tryLock(objects: Objects) = self.tryLock(objects)
+        fun unlock() = self.unlock(null)
+        fun unlock(objects: Objects) = self.unlock(objects)
 
         @JvmBlockingBridge
         suspend fun <T> withLock(
             objects: Objects?,
-            samCallback: FunctionInterfaces.MutexAndSemaphoreSAMCallback<T>
+            samCallback: KtCoroutineLambdaInterface.MutexAndSemaphoreSAMCallback<T>
         ): T =
-            mutex.withLock(objects) { samCallback.call() }
+            self.withLock(objects) { samCallback.call() }
 
         @JvmBlockingBridge
-        suspend fun <T> withLock(samCallback: FunctionInterfaces.MutexAndSemaphoreSAMCallback<T>): T =
+        suspend fun <T> withLock(samCallback: KtCoroutineLambdaInterface.MutexAndSemaphoreSAMCallback<T>): T =
             withLock(null, samCallback)
     }
 
@@ -353,21 +353,21 @@ object KotlinCoroutineLib : PluginLib() {
             SemaphoreJsImpl(kotlinx.coroutines.sync.Semaphore(permits, acquiredPermits))
     }
 
-    class SemaphoreJsImpl(val semaphore: kotlinx.coroutines.sync.Semaphore) {
-        fun availablePermits() = semaphore.availablePermits
+    class SemaphoreJsImpl(@JvmField val self: kotlinx.coroutines.sync.Semaphore) {
+        fun availablePermits() = self.availablePermits
 
         @JvmBlockingBridge
-        suspend fun acquire() = semaphore.acquire()
-        fun release() = semaphore.release()
-        fun tryAcquire() = semaphore.tryAcquire()
+        suspend fun acquire() = self.acquire()
+        fun release() = self.release()
+        fun tryAcquire() = self.tryAcquire()
 
         @JvmBlockingBridge
-        suspend fun <T> withPermits(samCallback: FunctionInterfaces.MutexAndSemaphoreSAMCallback<T>): T =
-            semaphore.withPermit { samCallback.call() }
+        suspend fun <T> withPermits(samCallback: KtCoroutineLambdaInterface.MutexAndSemaphoreSAMCallback<T>): T =
+            self.withPermit { samCallback.call() }
     }
 }
 
-class FunctionInterfaces {
+class KtCoroutineLambdaInterface {
     interface CoroutineScopeSAMCallback {
         fun call(coroutineScope: kotlinx.coroutines.CoroutineScope)
     }
