@@ -34,14 +34,15 @@ object MiraiLib : PluginLib() {
         ScriptableObject.putProperty(scope, nameInJs + "Kt", Context.javaToJS(this, scope))
     }
 
-    //GlobalEventChannel.filter is currently not available for Java
     fun <E : Event> wrapEventChannel(eventChannel: EventChannel<E>) =
         EventChannelKtWrapper(eventChannel)
 
     class EventChannelKtWrapper<E : Event>(val self: EventChannel<E>) {
+        //GlobalEventChannel.filter is currently not available for Java
         fun filter(samCallback: MiraiLambdaInterface.EventChannelFilterSAMCallback<E>) =
             EventChannelKtWrapper(self.filter { samCallback.call(it) })
 
+        //EventChannel.subscribeMessages is kotlin-only function.
         fun <R> subscribeMessages(
             coroutineContext: CoroutineContext,
             concurrencyKind: ConcurrencyKind,
@@ -64,7 +65,7 @@ object MiraiLib : PluginLib() {
             //always subscribe
             fun always(
                 samCallback: MiraiLambdaInterface.MessageListenerSAMInterface<MessageEvent, Unit, Unit>
-            ): Listener<MessageEvent> = self.always { samCallback.call(this, Unit.INSTANCE) }
+            ): Listener<MessageEvent> = self.always { samCallback.call(this, Unit) }
 
             //filter from message
             fun case(
@@ -132,39 +133,39 @@ object MiraiLib : PluginLib() {
             fun sentBy(
                 qq: Long,
                 samCallback: MiraiLambdaInterface.MessageListenerSAMInterface<FriendMessageEvent, Unit, Unit>
-            ) = self.sentBy(qq) { samCallback.call(this as FriendMessageEvent, Unit.INSTANCE) }
+            ) = self.sentBy(qq) { samCallback.call(this as FriendMessageEvent, Unit) }
 
             fun sentByFriend(
                 samCallback: MiraiLambdaInterface.MessageListenerSAMInterface<FriendMessageEvent, Unit, Unit>
-            ) = self.sentByFriend { samCallback.call(this, Unit.INSTANCE) }
+            ) = self.sentByFriend { samCallback.call(this, Unit) }
 
             fun sentByStranger(
                 samCallback: MiraiLambdaInterface.MessageListenerSAMInterface<StrangerMessageEvent, Unit, Unit>
-            ) = self.sentByStranger { samCallback.call(this, Unit.INSTANCE) }
+            ) = self.sentByStranger { samCallback.call(this, Unit) }
 
             fun sentByGroupAdmin(
                 samCallback: MiraiLambdaInterface.MessageListenerSAMInterface<GroupMessageEvent, Unit, Unit>
-            ) = self.sentByAdministrator().invoke { samCallback.call(this.cast(), Unit.INSTANCE) }
+            ) = self.sentByAdministrator().invoke { samCallback.call(this.cast(), Unit) }
 
             fun sentByGroupOwner(
                 samCallback: MiraiLambdaInterface.MessageListenerSAMInterface<GroupMessageEvent, Unit, Unit>
-            ) = self.sentByOwner().invoke { samCallback.call(this.cast(), Unit.INSTANCE) }
+            ) = self.sentByOwner().invoke { samCallback.call(this.cast(), Unit) }
 
             fun sentByGroupTemp(
                 samCallback: MiraiLambdaInterface.MessageListenerSAMInterface<GroupTempMessageEvent, Unit, Unit>
-            ) = self.sentByGroupTemp().invoke { samCallback.call(this.cast(), Unit.INSTANCE) }
+            ) = self.sentByGroupTemp().invoke { samCallback.call(this.cast(), Unit) }
 
             //TODO: seems doesn't work
             fun sentFrom(
                 group: Long,
                 samCallback: MiraiLambdaInterface.MessageListenerSAMInterface<GroupMessageEvent, Unit, Unit>
-            ) = self.sentFrom(group).invoke { samCallback.call(this.cast(), Unit.INSTANCE) }
+            ) = self.sentFrom(group).invoke { samCallback.call(this.cast(), Unit) }
 
             fun atBot(samCallback: MiraiLambdaInterface.MessageListenerSAMInterface<MessageEvent, Unit, Unit>) =
-                self.atBot().invoke { samCallback.call(this.cast(), Unit.INSTANCE) }
+                self.atBot().invoke { samCallback.call(this.cast(), Unit) }
 
             fun atAll(samCallback: MiraiLambdaInterface.MessageListenerSAMInterface<GroupMessageEvent, Unit, Unit>) =
-                self.atAll().invoke { samCallback.call(this.cast(), Unit.INSTANCE) }
+                self.atAll().invoke { samCallback.call(this.cast(), Unit) }
 
             fun at(qq: Long, samCallback: MiraiLambdaInterface.MessageListenerSAMInterface<MessageEvent, At, Unit>) =
                 self.at(qq).invoke {
@@ -186,8 +187,8 @@ object MiraiLib : PluginLib() {
                 samCallbackJudge: MiraiLambdaInterface.MessageListenerSAMInterface<MessageEvent, Unit, Boolean>,
                 samCallbackExecute: MiraiLambdaInterface.MessageListenerSAMInterface<MessageEvent, Unit, Unit>
             ) = self
-                .content { samCallbackJudge.call(this, Unit.INSTANCE) }
-                .invoke { samCallbackExecute.call(this.cast(), Unit.INSTANCE) }
+                .content { samCallbackJudge.call(this, Unit) }
+                .invoke { samCallbackExecute.call(this.cast(), Unit) }
         }
     }
 }
