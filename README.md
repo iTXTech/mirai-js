@@ -2,27 +2,7 @@
 
 **强大的 `Mirai JavaScript` 插件运行时**
 
-使用`JavaScript`编写 [Mirai](https://github.com/mamoe/mirai) 插件，支持与所有`Mirai API`直接交互，运行于`JVM`，支持`Android`环境。
-
-## 使用须知
-
-**所有基于`Mirai Js`的`JavaScript`插件必须遵循`AGPL-v3`协议开放源代码，详见 [协议文本](LICENSE) 。**
-
-**API可能随时变动，请保持更新！**
-
-## 特性
-
-* 极简语法
-* 支持在JS启动协程
-* 不完整的 [ES6 支持](https://mozilla.github.io/rhino/compat/engines.html)
-* 施主别着急，更多功能即将加入。先看看 [例子](examples) 吧。
-
-## Mirai Js 插件管理器 `jpm`
-
-1. 在 `mirai-console` 中键入 `jpm` 获得帮助
-1. `jpm` (`JavaScript Plugin Manager`) 可`列出插件`、`启用/停用/加载/卸载插件`
-
-`jpm [list|enable|disable|load|unload] (插件 Id/文件名)`
+> `rewrite` 分支正在重构中。
 
 ## 开源协议
 
