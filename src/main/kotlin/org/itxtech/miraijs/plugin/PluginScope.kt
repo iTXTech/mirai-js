@@ -41,7 +41,7 @@ class PluginScope(val src: String) : CoroutineScope {
         scope.also { sc ->
             ctx.also { cx ->
                 KotlinCoroutineLib.import(sc, cx)
-                MiraiLib().import(sc, cx)
+                MiraiLib.import(sc, cx)
                 OkHttpLib.import(sc, cx)
             }
         }
