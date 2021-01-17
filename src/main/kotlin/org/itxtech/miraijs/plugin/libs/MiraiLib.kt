@@ -1,8 +1,10 @@
 @file:Suppress("unused", "MemberVisibilityCanBePrivate")
 package org.itxtech.miraijs.plugin.libs
 
+import kotlinx.coroutines.*
 import net.mamoe.kjbb.JvmBlockingBridge
 import net.mamoe.mirai.console.util.cast
+import net.mamoe.mirai.contact.*
 import net.mamoe.mirai.event.*
 import net.mamoe.mirai.event.events.*
 import net.mamoe.mirai.message.data.*
@@ -38,7 +40,7 @@ object MiraiLib : PluginLib() {
         EventChannelKtWrapper(eventChannel)
 
     class EventChannelKtWrapper<E : Event>(val self: EventChannel<E>) {
-        //GlobalEventChannel.filter is currently not available for Java
+        //EventChannel.filter is currently not available for Java
         fun filter(samCallback: MiraiLambdaInterface.EventChannelFilterSAMCallback<E>) =
             EventChannelKtWrapper(self.filter { samCallback.call(it) })
 
@@ -132,40 +134,40 @@ object MiraiLib : PluginLib() {
             //filter from subject
             fun sentBy(
                 qq: Long,
-                samCallback: MiraiLambdaInterface.MessageListenerSAMInterface<FriendMessageEvent, Unit, Unit>
-            ) = self.sentBy(qq) { samCallback.call(this as FriendMessageEvent, Unit) }
+                samCallback: MiraiLambdaInterface.MessageListenerSAMInterface<FriendMessageEvent, Friend, Unit>
+            ) = self.sentBy(qq) { samCallback.call(this as FriendMessageEvent, subject) }
 
             fun sentByFriend(
-                samCallback: MiraiLambdaInterface.MessageListenerSAMInterface<FriendMessageEvent, Unit, Unit>
-            ) = self.sentByFriend { samCallback.call(this, Unit) }
+                samCallback: MiraiLambdaInterface.MessageListenerSAMInterface<FriendMessageEvent, Friend, Unit>
+            ) = self.sentByFriend { samCallback.call(this, subject) }
 
             fun sentByStranger(
-                samCallback: MiraiLambdaInterface.MessageListenerSAMInterface<StrangerMessageEvent, Unit, Unit>
-            ) = self.sentByStranger { samCallback.call(this, Unit) }
+                samCallback: MiraiLambdaInterface.MessageListenerSAMInterface<StrangerMessageEvent, Stranger, Unit>
+            ) = self.sentByStranger { samCallback.call(this, subject) }
 
             fun sentByGroupAdmin(
-                samCallback: MiraiLambdaInterface.MessageListenerSAMInterface<GroupMessageEvent, Unit, Unit>
-            ) = self.sentByAdministrator().invoke { samCallback.call(this.cast(), Unit) }
+                samCallback: MiraiLambdaInterface.MessageListenerSAMInterface<GroupMessageEvent, Member, Unit>
+            ) = self.sentByAdministrator().invoke { samCallback.call(this.cast(), this.cast()) }
 
             fun sentByGroupOwner(
-                samCallback: MiraiLambdaInterface.MessageListenerSAMInterface<GroupMessageEvent, Unit, Unit>
-            ) = self.sentByOwner().invoke { samCallback.call(this.cast(), Unit) }
+                samCallback: MiraiLambdaInterface.MessageListenerSAMInterface<GroupMessageEvent, Member, Unit>
+            ) = self.sentByOwner().invoke { samCallback.call(this.cast(), this.cast()) }
 
             fun sentByGroupTemp(
-                samCallback: MiraiLambdaInterface.MessageListenerSAMInterface<GroupTempMessageEvent, Unit, Unit>
-            ) = self.sentByGroupTemp().invoke { samCallback.call(this.cast(), Unit) }
+                samCallback: MiraiLambdaInterface.MessageListenerSAMInterface<GroupTempMessageEvent, NormalMember, Unit>
+            ) = self.sentByGroupTemp().invoke { samCallback.call(this.cast(), this.cast()) }
 
             //TODO: seems doesn't work
             fun sentFrom(
                 group: Long,
-                samCallback: MiraiLambdaInterface.MessageListenerSAMInterface<GroupMessageEvent, Unit, Unit>
-            ) = self.sentFrom(group).invoke { samCallback.call(this.cast(), Unit) }
+                samCallback: MiraiLambdaInterface.MessageListenerSAMInterface<GroupMessageEvent, Group, Unit>
+            ) = self.sentFrom(group).invoke { samCallback.call(this.cast(), this.cast()) }
 
             fun atBot(samCallback: MiraiLambdaInterface.MessageListenerSAMInterface<MessageEvent, Unit, Unit>) =
                 self.atBot().invoke { samCallback.call(this.cast(), Unit) }
 
-            fun atAll(samCallback: MiraiLambdaInterface.MessageListenerSAMInterface<GroupMessageEvent, Unit, Unit>) =
-                self.atAll().invoke { samCallback.call(this.cast(), Unit) }
+            fun atAll(samCallback: MiraiLambdaInterface.MessageListenerSAMInterface<GroupMessageEvent, Group, Unit>) =
+                self.atAll().invoke { samCallback.call(this.cast(), this.cast()) }
 
             fun at(qq: Long, samCallback: MiraiLambdaInterface.MessageListenerSAMInterface<MessageEvent, At, Unit>) =
                 self.at(qq).invoke {
@@ -352,6 +354,144 @@ object MiraiLib : PluginLib() {
                 .invoke { samCallbackExecute.call(this.cast(), Unit) }
         }
     }
+
+    @JvmField
+    val utils = LinearSyncHelperKt
+
+    //mostly copy from: net.mamoe.mirai.event.syncFromEvent and nextMessage
+    //modify to make js caller comfortable!
+    @Suppress("DeferredIsResult")
+    object LinearSyncHelperKt {
+        @JvmBlockingBridge
+        suspend fun <E : Event, R : Any> syncFromEvent(
+            clazz: Class<E>,
+            timeoutMillis: Long,
+            priority: EventPriority,
+            samCallback: MiraiLambdaInterface.SyncEventSAMCallback<E, R>
+        ): R? {
+            require(timeoutMillis == -1L || timeoutMillis > 0) { "timeoutMillis must be -1 or > 0" }
+            return withTimeoutOrNullOrCoroutineScope(timeoutMillis) {
+                this@LinearSyncHelperKt.syncFromEventImpl(clazz, this, priority) {
+                    samCallback.call(it)
+                }
+            }
+        }
+
+        @JvmBlockingBridge
+        suspend fun <E : Event, R : Any> syncFromEvent(
+            clazz: Class<E>,
+            samCallback: MiraiLambdaInterface.SyncEventSAMCallback<E, R>
+        ) = syncFromEvent(clazz, -1, EventPriority.MONITOR, samCallback)
+
+        //TODO: add a asyncFromEvent that uses plugin coroutine scope
+        fun <E : Event, R : Any> asyncFromEvent(
+            coroutineScope: CoroutineScope,
+            clazz: Class<E>,
+            timeoutMillis: Long,
+            priority: EventPriority,
+            samCallback: MiraiLambdaInterface.SyncEventSAMCallback<E, R>
+        ): KotlinCoroutineLib.DeferredJsImpl<R?> {
+            require(timeoutMillis == -1L || timeoutMillis > 0) { "timeoutMillis must be -1 or > 0" }
+            return KotlinCoroutineLib.DeferredJsImpl<R?>(
+                coroutineScope.async(context = coroutineScope.coroutineContext) {
+                    syncFromEvent(clazz, timeoutMillis, priority, samCallback)
+                }
+            )
+        }
+
+        fun <E : Event, R : Any> asyncFromEvent(
+            coroutineScope: CoroutineScope,
+            clazz: Class<E>,
+            samCallback: MiraiLambdaInterface.SyncEventSAMCallback<E, R>
+        ): KotlinCoroutineLib.DeferredJsImpl<R?> = KotlinCoroutineLib.DeferredJsImpl(
+            coroutineScope.async(context = coroutineScope.coroutineContext) {
+                syncFromEvent(clazz, -1, EventPriority.MONITOR, samCallback)
+            }
+        )
+
+        @JvmBlockingBridge
+        suspend fun <E : Event> nextEvent(
+            clazz: Class<E>,
+            timeoutMillis: Long,
+            priority: EventPriority,
+            samCallback: MiraiLambdaInterface.SyncEventSAMCallback<E, Boolean>
+        ): E? {
+            require(timeoutMillis == -1L || timeoutMillis > 0) { "timeoutMillis must be -1 or > 0" }
+            return withTimeoutOrNullOrCoroutineScope(timeoutMillis) {
+                nextEventImpl(clazz, this, priority) { samCallback.call(it) }
+            }
+        }
+
+        @JvmBlockingBridge
+        suspend fun <E : Event> nextEvent(
+            clazz: Class<E>,
+            samCallback: MiraiLambdaInterface.SyncEventSAMCallback<E, Boolean>
+        ) = nextEvent(clazz, -1, EventPriority.MONITOR, samCallback)
+
+        @JvmBlockingBridge
+        suspend fun <E : Event> nextEvent(
+            clazz: Class<E>,
+            timeoutMillis: Long,
+            priority: EventPriority,
+        ): E? {
+            require(timeoutMillis == -1L || timeoutMillis > 0) { "timeoutMillis must be -1 or > 0" }
+            return withTimeoutOrNullOrCoroutineScope(timeoutMillis) {
+                nextEventImpl(clazz, this, priority) { true }
+            }
+        }
+
+        @JvmBlockingBridge
+        suspend fun <E : Event> nextEvent(
+            clazz: Class<E>,
+        ) = nextEvent(clazz, -1, EventPriority.MONITOR)
+
+        private suspend fun <E : Event, R> syncFromEventImpl(
+            clazz: Class<E>,
+            coroutineScope: CoroutineScope,
+            priority: EventPriority,
+            mapper: (E) -> R?
+        ): R = suspendCancellableCoroutine { continuation ->
+            coroutineScope.globalEventChannel().subscribe(clazz.kotlin, priority = priority) {
+                runCatching {
+                    continuation.resumeWith(
+                        Result.success(
+                            mapper.invoke(this) ?: return@subscribe ListeningStatus.LISTENING
+                        )
+                    )
+                }
+                return@subscribe ListeningStatus.STOPPED
+            }
+        }
+
+        @OptIn(ExperimentalCoroutinesApi::class)
+        private suspend fun <E : Event> nextEventImpl(
+            clazz: Class<E>,
+            coroutineScope: CoroutineScope,
+            priority: EventPriority,
+            filter: (E) -> Boolean
+        ): E = suspendCancellableCoroutine { continuation ->
+            coroutineScope.globalEventChannel().subscribe(clazz.kotlin, priority = priority) {
+                if (!filter(this)) return@subscribe ListeningStatus.LISTENING
+                runCatching {
+                    continuation.resumeWith(Result.success(this))
+                }
+                return@subscribe ListeningStatus.STOPPED
+            }
+        }
+
+        private suspend inline fun <R> withTimeoutOrNullOrCoroutineScope(
+            timeoutMillis: Long,
+            noinline block: suspend CoroutineScope.() -> R
+        ): R? {
+            require(timeoutMillis == -1L || timeoutMillis > 0) { "timeoutMillis must be -1 or > 0 " }
+            return if (timeoutMillis == -1L) {
+                coroutineScope(block)
+            } else {
+                withTimeoutOrNull(timeoutMillis, block)
+            }
+        }
+    }
+
 }
 
 object MiraiLambdaInterface {
@@ -373,5 +513,9 @@ object MiraiLambdaInterface {
 
     interface MessageEventSelectTimeoutSAMCallback<R> {
         fun call(): R
+    }
+
+    interface SyncEventSAMCallback<E : Event, R> {
+        fun call(event: E): R
     }
 }
