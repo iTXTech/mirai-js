@@ -26,13 +26,15 @@ object KotlinCoroutineLib : PluginLib() {
     @JvmField
     val Dispatchers = kotlinx.coroutines.Dispatchers
 
-    class CoroutineContextJsImpl(@JvmField val self: kotlin.coroutines.CoroutineContext) {
+    class CoroutineContextJsImpl(private val self: kotlin.coroutines.CoroutineContext) {
         fun plus(other: CoroutineContextJsImpl) = CoroutineContextJsImpl(self.plus(other.self))
         fun isActive() = self.isActive
         fun getJob() = JobJsImpl(self.job)
         fun cancel(cause: String) = self.cancel(CancellationException(cause))
         fun cancelChildren(cause: String) = self.cancelChildren(CancellationException(cause))
         fun ensureActive() = self.ensureActive()
+
+        fun unwrap() = self
     }
 
     @JvmField
@@ -43,18 +45,20 @@ object KotlinCoroutineLib : PluginLib() {
             })
     }
 
-    class ContinuationJsImpl<T>(@JvmField val self: kotlin.coroutines.Continuation<T>) {
+    class ContinuationJsImpl<T>(private val self: kotlin.coroutines.Continuation<T>) {
         fun resumeWithSuccess(value: T) = self.resumeWith(Result.success(value))
         fun resumeWithFailure(reason: String) = self.resumeWith(Result.failure(Throwable(reason)))
         fun resume(value: T) = self.resume(value)
         fun getContext() = CoroutineContextJsImpl(self.context)
+
+        fun unwrap() = self
     }
 
     fun createSupervisorJob(parent: kotlinx.coroutines.Job?) =
         SupervisorJobJsImpl(kotlinx.coroutines.SupervisorJob(parent))
 
     fun createSupervisorJob() = createSupervisorJob(null)
-    class SupervisorJobJsImpl(@JvmField val self: kotlinx.coroutines.CompletableJob) {
+    class SupervisorJobJsImpl(private val self: kotlinx.coroutines.CompletableJob) {
         @JvmBlockingBridge
         suspend fun join() = self.join()
         fun cancel(reason: String) = self.cancel(cause = kotlinx.coroutines.CancellationException(reason))
@@ -66,11 +70,13 @@ object KotlinCoroutineLib : PluginLib() {
         fun isCompleted() = self.isCompleted
         fun complete() = self.complete()
         fun completeExceptionally(reason: String) = self.completeExceptionally(Throwable(reason))
+
+        fun unwrap() = self
     }
 
     fun createJob(parent: kotlinx.coroutines.Job?) = JobJsImpl(kotlinx.coroutines.Job(parent))
 
-    class JobJsImpl(@JvmField val self: kotlinx.coroutines.Job) {
+    class JobJsImpl(private val self: kotlinx.coroutines.Job) {
         @JvmBlockingBridge
         suspend fun join() = self.join()
         fun cancel(reason: String) = self.cancel(cause = kotlinx.coroutines.CancellationException(reason))
@@ -80,6 +86,8 @@ object KotlinCoroutineLib : PluginLib() {
         fun isActive() = self.isActive
         fun isCanceled() = self.isCancelled
         fun isCompleted() = self.isCompleted
+
+        fun unwrap() = self
     }
 
     fun createJob() = createJob(null)
@@ -136,6 +144,8 @@ object KotlinCoroutineLib : PluginLib() {
 
         @kotlinx.coroutines.ExperimentalCoroutinesApi
         fun getCompleted() = deferred.getCompleted()
+
+        fun unwrap() = deferred
     }
 
 
@@ -201,7 +211,7 @@ object KotlinCoroutineLib : PluginLib() {
             )
     }
 
-    class ChannelJsImpl<T>(@JvmField val self: kotlinx.coroutines.channels.Channel<T>) {
+    class ChannelJsImpl<T>(private val self: kotlinx.coroutines.channels.Channel<T>) {
         @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
         fun isClosedForReceive() = self.isClosedForReceive
 
@@ -222,6 +232,8 @@ object KotlinCoroutineLib : PluginLib() {
         @JvmBlockingBridge
         suspend fun send(value: T) = self.send(value)
         fun close() = self.close()
+
+        fun unwrap() = self
     }
 
     @JvmField
@@ -235,9 +247,11 @@ object KotlinCoroutineLib : PluginLib() {
     class FlowCollectorJsImpl<T>(val flowCollector: FlowCollector<T>) {
         @JvmBlockingBridge
         suspend fun emit(value: T) = flowCollector.emit(value)
+
+        fun unwrap() = flowCollector
     }
 
-    class FlowJsImpl<T>(@JvmField val self: Flow<T>) {
+    class FlowJsImpl<T>(private val self: Flow<T>) {
         fun onEach(samCallback: KtCoroutineLambdaInterface.FlowUpstreamOnEachSAMCallback<T>) =
             FlowJsImpl(self.onEach { samCallback.call(it) })
 
@@ -268,7 +282,7 @@ object KotlinCoroutineLib : PluginLib() {
         fun buffer() = FlowJsImpl(self.buffer())
         fun conflate() = FlowJsImpl(self.conflate())
 
-        fun flowOn(context: CoroutineContextJsImpl) = FlowJsImpl(self.flowOn(context.self))
+        fun flowOn(context: CoroutineContextJsImpl) = FlowJsImpl(self.flowOn(context.unwrap()))
         fun launchIn(scope: kotlinx.coroutines.CoroutineScope) = JobJsImpl(self.launchIn(scope))
         fun catch(samCallback: KtCoroutineLambdaInterface.FlowTransformErrorSAMCallback<T>) =
             FlowJsImpl(self.catch { samCallback.call(FlowCollectorJsImpl(this), it) })
@@ -313,6 +327,8 @@ object KotlinCoroutineLib : PluginLib() {
         @JvmBlockingBridge
         suspend fun count(samCallback: KtCoroutineLambdaInterface.FlowTransformSAMCallbackChangeJudgeType<T>) =
             self.count { samCallback.call(it) }
+
+        fun unwrap() = self
     }
 
     @JvmField
@@ -321,7 +337,7 @@ object KotlinCoroutineLib : PluginLib() {
         fun createMutex(boolean: Boolean) = MutexJsImpl(kotlinx.coroutines.sync.Mutex(boolean))
     }
 
-    class MutexJsImpl(@JvmField val self: kotlinx.coroutines.sync.Mutex) {
+    class MutexJsImpl(private val self: kotlinx.coroutines.sync.Mutex) {
         fun isLocked() = self.isLocked
         fun holdsLock(objects: Objects) = self.holdsLock(objects)
 
@@ -344,6 +360,8 @@ object KotlinCoroutineLib : PluginLib() {
         @JvmBlockingBridge
         suspend fun <T> withLock(samCallback: KtCoroutineLambdaInterface.MutexAndSemaphoreSAMCallback<T>): T =
             withLock(null, samCallback)
+
+        fun unwrap() = self
     }
 
     @JvmField
@@ -353,7 +371,7 @@ object KotlinCoroutineLib : PluginLib() {
             SemaphoreJsImpl(kotlinx.coroutines.sync.Semaphore(permits, acquiredPermits))
     }
 
-    class SemaphoreJsImpl(@JvmField val self: kotlinx.coroutines.sync.Semaphore) {
+    class SemaphoreJsImpl(private val self: kotlinx.coroutines.sync.Semaphore) {
         fun availablePermits() = self.availablePermits
 
         @JvmBlockingBridge
@@ -364,6 +382,8 @@ object KotlinCoroutineLib : PluginLib() {
         @JvmBlockingBridge
         suspend fun <T> withPermits(samCallback: KtCoroutineLambdaInterface.MutexAndSemaphoreSAMCallback<T>): T =
             self.withPermit { samCallback.call() }
+
+        fun unwrap() = self
     }
 
     //wrapper
