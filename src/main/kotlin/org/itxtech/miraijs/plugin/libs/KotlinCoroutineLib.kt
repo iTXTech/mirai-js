@@ -365,6 +365,17 @@ object KotlinCoroutineLib : PluginLib() {
         suspend fun <T> withPermits(samCallback: KtCoroutineLambdaInterface.MutexAndSemaphoreSAMCallback<T>): T =
             self.withPermit { samCallback.call() }
     }
+
+    //wrapper
+    fun wrapCoroutineContext(context: kotlin.coroutines.CoroutineContext) = CoroutineContextJsImpl(context)
+    fun <T> wrapContinuation(continuation: kotlin.coroutines.Continuation<T>) = ContinuationJsImpl(continuation)
+    fun wrapSupervisorJob(job: kotlinx.coroutines.CompletableJob) = SupervisorJobJsImpl(job)
+    fun wrapJob(job: kotlinx.coroutines.Job) = JobJsImpl(job)
+    fun <T> wrapDeferred(deferred: kotlinx.coroutines.Deferred<T>) = DeferredJsImpl(deferred)
+    fun <E> wrapChannel(channel: kotlinx.coroutines.channels.Channel<E>) = ChannelJsImpl(channel)
+    fun <T> wrapFlow(flow: Flow<T>) = FlowJsImpl(flow)
+    fun <T> wrapFlowCollector(flowCollector: FlowCollector<T>) =
+        FlowCollectorJsImpl(flowCollector)
 }
 
 class KtCoroutineLambdaInterface {
