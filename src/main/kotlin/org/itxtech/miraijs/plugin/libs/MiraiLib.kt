@@ -209,6 +209,8 @@ object MiraiLib : PluginLib() {
             samCallback: MiraiLambdaInterface.MessageEventSelectMessageSAMCallback<R>
         ) = selectMessages(-1, true, EventPriority.MONITOR, samCallback)
 
+        fun unwrap() = self
+
         class MessageEventSelectBuilderJsImpl<R>(val self: MessageSelectBuilder<MessageEvent, R>) {
             //selectMessages-only function
             fun default(
