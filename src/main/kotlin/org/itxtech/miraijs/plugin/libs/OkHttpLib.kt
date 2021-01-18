@@ -6,7 +6,10 @@ import org.mozilla.javascript.Scriptable
 
 object OkHttpLib : PluginLib() {
     override val nameInJs: String = "http"
+
+    @JvmSynthetic
     override fun import(scope: Scriptable, context: Context) {
+        //TODO: coroutine.asyncFromGlobalScope in http.request
         context.evaluateString(
             scope, """
             /*
