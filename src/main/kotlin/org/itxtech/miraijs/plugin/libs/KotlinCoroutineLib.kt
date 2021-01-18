@@ -16,12 +16,22 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.sync.withPermit
 import net.mamoe.kjbb.JvmBlockingBridge
 import org.itxtech.miraijs.plugin.PluginLib
+import org.mozilla.javascript.Context
+import org.mozilla.javascript.Scriptable
+import org.mozilla.javascript.ScriptableObject
 import java.util.*
 import kotlin.coroutines.resume
 
 @Suppress("FunctionName", "ClassName", "MemberVisibilityCanBePrivate")
 object KotlinCoroutineLib : PluginLib() {
     override val nameInJs = "coroutine"
+
+    @JvmSynthetic
+    override fun import(scope: Scriptable, context: Context) {
+        ScriptableObject.putProperty(scope, nameInJs, Context.javaToJS(this, scope))
+    }
+
+    //TODO: provide plugin coroutine scope
 
     @JvmField
     val Dispatchers = kotlinx.coroutines.Dispatchers
@@ -119,19 +129,22 @@ object KotlinCoroutineLib : PluginLib() {
 
     @JvmBlockingBridge
     suspend fun yield() = kotlinx.coroutines.yield()
+
     fun launchFromGlobalScope(samCallback: KtCoroutineLambdaInterface.CoroutineScopeSAMCallback) =
         kotlinx.coroutines.GlobalScope.launch { samCallback.call(this) }
+
+    //TODO: create launchFromPluginScope(callback) and launch(callback) that launch coroutine in plugin scope
 
     fun launch(
         coroutineScope: kotlinx.coroutines.CoroutineScope,
         samCallback: KtCoroutineLambdaInterface.CoroutineScopeSAMCallback
-    ) =
-        coroutineScope.launch(coroutineScope.coroutineContext) { samCallback.call(this) }
+    ) = coroutineScope.launch(coroutineScope.coroutineContext) { samCallback.call(this) }
 
     fun <T> asyncFromGlobalScope(
         samCallback: KtCoroutineLambdaInterface.CoroutineScopeSAMCallbackWithReturnedValue<T>
     ) = DeferredJsImpl(kotlinx.coroutines.GlobalScope.async { samCallback.call(this) })
 
+    //TODO: create asyncFromPluginScope(callback) and async(callback) that launch async in plugin scope
 
     fun <T> async(
         coroutineScope: kotlinx.coroutines.CoroutineScope,
@@ -173,7 +186,9 @@ object KotlinCoroutineLib : PluginLib() {
     }
 
     @JvmField
-    val channel = object {
+    val channel = ChannelJsField
+
+    object ChannelJsField {
         @JvmField
         val BufferOverflow = object {
             @JvmField
@@ -188,25 +203,22 @@ object KotlinCoroutineLib : PluginLib() {
 
         @JvmField
         val ChannelFactory = kotlinx.coroutines.channels.Channel.Factory
-        fun <T> createChannel(): ChannelJsImpl<T> =
-            createChannel(ChannelFactory.RENDEZVOUS, BufferOverflow.SUSPEND, null)
 
-        fun <T> createChannel(capacity: Int): ChannelJsImpl<T> =
-            createChannel(capacity = capacity, BufferOverflow.SUSPEND, null)
-
-        fun <T> createChannel(samCallback: KtCoroutineLambdaInterface.ChannelOnDeliverElementSAMCallback<T>): ChannelJsImpl<T> =
-            createChannel(ChannelFactory.RENDEZVOUS, BufferOverflow.SUSPEND, samCallback)
-
-        fun <T> createChannel(
+        @JvmOverloads
+        fun <T> create(
             capacity: Int = ChannelFactory.RENDEZVOUS,
-            onBufferOverflow: kotlinx.coroutines.channels.BufferOverflow,
-            samCallback: KtCoroutineLambdaInterface.ChannelOnDeliverElementSAMCallback<T>?
+            onBufferOverflow: kotlinx.coroutines.channels.BufferOverflow =
+                kotlinx.coroutines.channels.BufferOverflow.SUSPEND,
+            samCallback: KtCoroutineLambdaInterface.ChannelOnDeliverElementSAMCallback<T> =
+                object : KtCoroutineLambdaInterface.ChannelOnDeliverElementSAMCallback<T> {
+                    override fun call(value: T) {}
+                }
         ): ChannelJsImpl<T> =
             ChannelJsImpl(
                 kotlinx.coroutines.channels.Channel(
                     capacity,
                     onBufferOverflow,
-                    if (samCallback == null) null else ({ samCallback.call(it) })
+                    ({ samCallback.call(it) })
                 )
             )
     }
@@ -238,7 +250,7 @@ object KotlinCoroutineLib : PluginLib() {
 
     @JvmField
     val flow = object {
-        fun <T> createFlow(samCallback: KtCoroutineLambdaInterface.FlowActionSAMCallback<T>): FlowJsImpl<T> =
+        fun <T> create(samCallback: KtCoroutineLambdaInterface.FlowActionSAMCallback<T>): FlowJsImpl<T> =
             FlowJsImpl(flow { samCallback.call(FlowCollectorJsImpl(this)) })
 
         fun <T> flowOf(elements: Array<T>) = FlowJsImpl(flow { repeat(elements.count()) { emit(elements[it]) } })
@@ -332,9 +344,11 @@ object KotlinCoroutineLib : PluginLib() {
     }
 
     @JvmField
-    val mutex = object {
-        fun createMutex() = createMutex(false)
-        fun createMutex(boolean: Boolean) = MutexJsImpl(kotlinx.coroutines.sync.Mutex(boolean))
+    val mutex = MutexJsField
+
+    object MutexJsField {
+        @JvmOverloads
+        fun create(boolean: Boolean = false) = MutexJsImpl(kotlinx.coroutines.sync.Mutex(boolean))
     }
 
     class MutexJsImpl(private val self: kotlinx.coroutines.sync.Mutex) {
@@ -365,9 +379,11 @@ object KotlinCoroutineLib : PluginLib() {
     }
 
     @JvmField
-    val semaphore = object {
-        fun createSemaphore(permits: Int) = createSemaphore(permits, 0)
-        fun createSemaphore(permits: Int, acquiredPermits: Int) =
+    val semaphore = SemaphoreJsField
+
+    object SemaphoreJsField {
+        @JvmOverloads
+        fun create(permits: Int, acquiredPermits: Int = 0) =
             SemaphoreJsImpl(kotlinx.coroutines.sync.Semaphore(permits, acquiredPermits))
     }
 
