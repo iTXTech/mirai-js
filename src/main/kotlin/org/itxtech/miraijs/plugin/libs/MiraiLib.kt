@@ -18,6 +18,7 @@ import kotlin.coroutines.EmptyCoroutineContext
 object MiraiLib : PluginLib() {
     override val nameInJs: String = "mirai"
 
+    @JvmSynthetic
     override fun import(scope: Scriptable, context: Context) {
         context.evaluateString(
             scope, """
@@ -45,10 +46,11 @@ object MiraiLib : PluginLib() {
             EventChannelKtWrapper(self.filter { samCallback.call(it) })
 
         //EventChannel.subscribeMessages is kotlin-only function.
+        @JvmOverloads
         fun <R> subscribeMessages(
-            coroutineContext: CoroutineContext,
-            concurrencyKind: ConcurrencyKind,
-            priority: EventPriority,
+            coroutineContext: CoroutineContext = EmptyCoroutineContext,
+            concurrencyKind: ConcurrencyKind = ConcurrencyKind.CONCURRENT,
+            priority: EventPriority = EventPriority.MONITOR,
             samCallBack: MiraiLambdaInterface.EventChannelSubscribeMessagesSAMCallback<R>
         ): EventChannelKtWrapper<E> {
             self.subscribeMessages(coroutineContext, concurrencyKind, priority) {
@@ -56,10 +58,6 @@ object MiraiLib : PluginLib() {
             }
             return this
         }
-
-        fun <R> subscribeMessages(
-            samCallBack: MiraiLambdaInterface.EventChannelSubscribeMessagesSAMCallback<R>
-        ) = subscribeMessages(EmptyCoroutineContext, ConcurrencyKind.CONCURRENT, EventPriority.MONITOR, samCallBack)
 
         fun unwrap() = self
 
@@ -70,23 +68,20 @@ object MiraiLib : PluginLib() {
             ): Listener<MessageEvent> = self.always { samCallback.call(this, Unit) }
 
             //filter from message
+            @JvmOverloads
             fun case(
-                equals: String, ignoreCase: Boolean, trim: Boolean,
+                equals: String, ignoreCase: Boolean = false, trim: Boolean = true,
                 samCallback: MiraiLambdaInterface.MessageListenerSAMInterface<MessageEvent, String, Unit>
             ): Listener<MessageEvent> = self.case(equals, ignoreCase, trim) { samCallback.call(this, it) }
-
-            fun case(
-                equals: String,
-                samCallback: MiraiLambdaInterface.MessageListenerSAMInterface<MessageEvent, String, Unit>
-            ) = case(equals, ignoreCase = false, trim = true, samCallback)
 
             fun match(
                 regex: org.mozilla.javascript.regexp.NativeRegExp,
                 samCallback: MiraiLambdaInterface.MessageListenerSAMInterface<MessageEvent, MatchResult, Unit>
             ) = self.matching(Regex(regex.toString())) { samCallback.call(this, it) }
 
+            @JvmOverloads
             fun contains(
-                equals: String, ignoreCase: Boolean, trim: Boolean,
+                equals: String, ignoreCase: Boolean = false, trim: Boolean = true,
                 samCallback: MiraiLambdaInterface.MessageListenerSAMInterface<MessageEvent, String, Unit>
             ): Listener<MessageEvent> = self.contains(equals, ignoreCase, trim) {
                 samCallback.call(
@@ -95,13 +90,9 @@ object MiraiLib : PluginLib() {
                 )
             }
 
-            fun contains(
-                equals: String,
-                samCallback: MiraiLambdaInterface.MessageListenerSAMInterface<MessageEvent, String, Unit>
-            ) = contains(equals, ignoreCase = false, trim = true, samCallback)
-
+            @JvmOverloads
             fun startWith(
-                equals: String, trim: Boolean,
+                equals: String, trim: Boolean = true,
                 samCallback: MiraiLambdaInterface.MessageListenerSAMInterface<MessageEvent, String, Unit>
             ): Listener<MessageEvent> = self.startsWith(equals, trim) {
                 samCallback.call(
@@ -110,13 +101,9 @@ object MiraiLib : PluginLib() {
                 )
             }
 
-            fun startWith(
-                equals: String,
-                samCallback: MiraiLambdaInterface.MessageListenerSAMInterface<MessageEvent, String, Unit>
-            ) = startWith(equals, trim = true, samCallback)
-
+            @JvmOverloads
             fun endsWith(
-                suffix: String, removeSuffix: Boolean, trim: Boolean,
+                suffix: String, removeSuffix: Boolean = true, trim: Boolean = true,
                 samCallback: MiraiLambdaInterface.MessageListenerSAMInterface<MessageEvent, String, Unit>
             ): Listener<MessageEvent> = self.endsWith(suffix, removeSuffix, trim) {
                 samCallback.call(
@@ -125,11 +112,6 @@ object MiraiLib : PluginLib() {
                         .first { p -> p.content.endsWith(suffix, ignoreCase = false) }.content
                 )
             }
-
-            fun endsWith(
-                equals: String,
-                samCallback: MiraiLambdaInterface.MessageListenerSAMInterface<MessageEvent, String, Unit>
-            ) = endsWith(equals, removeSuffix = true, trim = true, samCallback)
 
             //filter from subject
             fun sentBy(
@@ -198,18 +180,14 @@ object MiraiLib : PluginLib() {
         MessageEventKtWrapper(messageEvent)
 
     class MessageEventKtWrapper(val self: MessageEvent) {
+        @JvmOverloads
         @JvmBlockingBridge
         suspend fun <R> selectMessages(
-            timeMillis: Long, filterContext: Boolean, priority: EventPriority,
+            timeMillis: Long = -1, filterContext: Boolean = true, priority: EventPriority = EventPriority.MONITOR,
             samCallback: MiraiLambdaInterface.MessageEventSelectMessageSAMCallback<R>
         ) = self.selectMessages(timeMillis, filterContext, priority) {
             samCallback.call(MessageEventSelectBuilderJsImpl(this))
         }
-
-        @JvmBlockingBridge
-        suspend fun <R> selectMessages(
-            samCallback: MiraiLambdaInterface.MessageEventSelectMessageSAMCallback<R>
-        ) = selectMessages(-1, true, EventPriority.MONITOR, samCallback)
 
         fun unwrap() = self
 
@@ -231,23 +209,20 @@ object MiraiLib : PluginLib() {
 
             //copy from [MessageEventSubscriberBuilderJsImpl]
             //filter from message
+            @JvmOverloads
             fun case(
-                equals: String, ignoreCase: Boolean, trim: Boolean,
+                equals: String, ignoreCase: Boolean = false, trim: Boolean = true,
                 samCallback: MiraiLambdaInterface.MessageListenerSAMInterface<MessageEvent, String, R>
             ) = self.case(equals, ignoreCase, trim) { samCallback.call(this, it) }
-
-            fun case(
-                equals: String,
-                samCallback: MiraiLambdaInterface.MessageListenerSAMInterface<MessageEvent, String, R>
-            ) = case(equals, ignoreCase = false, trim = true, samCallback)
 
             fun match(
                 regex: org.mozilla.javascript.regexp.NativeRegExp,
                 samCallback: MiraiLambdaInterface.MessageListenerSAMInterface<MessageEvent, MatchResult, R>
             ) = self.matching(Regex(regex.toString())) { samCallback.call(this, it) }
 
+            @JvmOverloads
             fun contains(
-                equals: String, ignoreCase: Boolean, trim: Boolean,
+                equals: String, ignoreCase: Boolean = true, trim: Boolean = true,
                 samCallback: MiraiLambdaInterface.MessageListenerSAMInterface<MessageEvent, String, R>
             ) = self.contains(equals, ignoreCase, trim) {
                 samCallback.call(
@@ -256,13 +231,9 @@ object MiraiLib : PluginLib() {
                 )
             }
 
-            fun contains(
-                equals: String,
-                samCallback: MiraiLambdaInterface.MessageListenerSAMInterface<MessageEvent, String, R>
-            ) = contains(equals, ignoreCase = false, trim = true, samCallback)
-
+            @JvmOverloads
             fun startWith(
-                equals: String, trim: Boolean,
+                equals: String, trim: Boolean = true,
                 samCallback: MiraiLambdaInterface.MessageListenerSAMInterface<MessageEvent, String, R>
             ) = self.startsWith(equals, trim) {
                 samCallback.call(
@@ -271,13 +242,9 @@ object MiraiLib : PluginLib() {
                 )
             }
 
-            fun startWith(
-                equals: String,
-                samCallback: MiraiLambdaInterface.MessageListenerSAMInterface<MessageEvent, String, R>
-            ) = startWith(equals, trim = true, samCallback)
-
+            @JvmOverloads
             fun endsWith(
-                suffix: String, removeSuffix: Boolean, trim: Boolean,
+                suffix: String, removeSuffix: Boolean = true, trim: Boolean = true,
                 samCallback: MiraiLambdaInterface.MessageListenerSAMInterface<MessageEvent, String, R>
             ) = self.endsWith(suffix, removeSuffix, trim) {
                 samCallback.call(
@@ -286,11 +253,6 @@ object MiraiLib : PluginLib() {
                         .first { p -> p.content.endsWith(suffix, ignoreCase = false) }.content
                 )
             }
-
-            fun endsWith(
-                equals: String,
-                samCallback: MiraiLambdaInterface.MessageListenerSAMInterface<MessageEvent, String, R>
-            ) = endsWith(equals, removeSuffix = true, trim = true, samCallback)
 
             //filter from subject
             fun sentBy(
@@ -356,94 +318,63 @@ object MiraiLib : PluginLib() {
     }
 
     @JvmField
-    val utils = LinearSyncHelperKt
+    val utils = LinearSyncHelperKtWrapper
 
     //mostly copy from: net.mamoe.mirai.event.syncFromEvent and nextMessage
     //modify to make js caller comfortable!
     @Suppress("DeferredIsResult")
-    object LinearSyncHelperKt {
+    object LinearSyncHelperKtWrapper {
+        @JvmOverloads
         @JvmBlockingBridge
         suspend fun <E : Event, R : Any> syncFromEvent(
             clazz: Class<E>,
-            timeoutMillis: Long,
-            priority: EventPriority,
+            timeoutMillis: Long = -1,
+            priority: EventPriority = EventPriority.MONITOR,
             samCallback: MiraiLambdaInterface.SyncEventSAMCallback<E, R>
         ): R? {
             require(timeoutMillis == -1L || timeoutMillis > 0) { "timeoutMillis must be -1 or > 0" }
             return withTimeoutOrNullOrCoroutineScope(timeoutMillis) {
-                this@LinearSyncHelperKt.syncFromEventImpl(clazz, this, priority) {
+                this@LinearSyncHelperKtWrapper.syncFromEventImpl(clazz, this, priority) {
                     samCallback.call(it)
                 }
             }
         }
 
-        @JvmBlockingBridge
-        suspend fun <E : Event, R : Any> syncFromEvent(
-            clazz: Class<E>,
-            samCallback: MiraiLambdaInterface.SyncEventSAMCallback<E, R>
-        ) = syncFromEvent(clazz, -1, EventPriority.MONITOR, samCallback)
-
         //TODO: add a asyncFromEvent that uses plugin coroutine scope
+        @JvmOverloads
         fun <E : Event, R : Any> asyncFromEvent(
             coroutineScope: CoroutineScope,
             clazz: Class<E>,
-            timeoutMillis: Long,
-            priority: EventPriority,
+            timeoutMillis: Long = -1,
+            priority: EventPriority = EventPriority.MONITOR,
             samCallback: MiraiLambdaInterface.SyncEventSAMCallback<E, R>
         ): KotlinCoroutineLib.DeferredJsImpl<R?> {
             require(timeoutMillis == -1L || timeoutMillis > 0) { "timeoutMillis must be -1 or > 0" }
-            return KotlinCoroutineLib.DeferredJsImpl<R?>(
+            return KotlinCoroutineLib.DeferredJsImpl(
                 coroutineScope.async(context = coroutineScope.coroutineContext) {
                     syncFromEvent(clazz, timeoutMillis, priority, samCallback)
                 }
             )
         }
 
-        fun <E : Event, R : Any> asyncFromEvent(
-            coroutineScope: CoroutineScope,
-            clazz: Class<E>,
-            samCallback: MiraiLambdaInterface.SyncEventSAMCallback<E, R>
-        ): KotlinCoroutineLib.DeferredJsImpl<R?> = KotlinCoroutineLib.DeferredJsImpl(
-            coroutineScope.async(context = coroutineScope.coroutineContext) {
-                syncFromEvent(clazz, -1, EventPriority.MONITOR, samCallback)
-            }
-        )
-
+        @JvmOverloads
         @JvmBlockingBridge
         suspend fun <E : Event> nextEvent(
             clazz: Class<E>,
-            timeoutMillis: Long,
-            priority: EventPriority,
-            samCallback: MiraiLambdaInterface.SyncEventSAMCallback<E, Boolean>
+            timeoutMillis: Long = -1,
+            priority: EventPriority = EventPriority.MONITOR,
+            samCallback: MiraiLambdaInterface.SyncEventSAMCallback<E, Boolean> =
+                object : MiraiLambdaInterface.SyncEventSAMCallback<E, Boolean> {
+                    override fun call(event: E): Boolean {
+                        return true
+                    }
+                }
         ): E? {
             require(timeoutMillis == -1L || timeoutMillis > 0) { "timeoutMillis must be -1 or > 0" }
             return withTimeoutOrNullOrCoroutineScope(timeoutMillis) {
                 nextEventImpl(clazz, this, priority) { samCallback.call(it) }
             }
         }
-
-        @JvmBlockingBridge
-        suspend fun <E : Event> nextEvent(
-            clazz: Class<E>,
-            samCallback: MiraiLambdaInterface.SyncEventSAMCallback<E, Boolean>
-        ) = nextEvent(clazz, -1, EventPriority.MONITOR, samCallback)
-
-        @JvmBlockingBridge
-        suspend fun <E : Event> nextEvent(
-            clazz: Class<E>,
-            timeoutMillis: Long,
-            priority: EventPriority,
-        ): E? {
-            require(timeoutMillis == -1L || timeoutMillis > 0) { "timeoutMillis must be -1 or > 0" }
-            return withTimeoutOrNullOrCoroutineScope(timeoutMillis) {
-                nextEventImpl(clazz, this, priority) { true }
-            }
-        }
-
-        @JvmBlockingBridge
-        suspend fun <E : Event> nextEvent(
-            clazz: Class<E>,
-        ) = nextEvent(clazz, -1, EventPriority.MONITOR)
 
         private suspend fun <E : Event, R> syncFromEventImpl(
             clazz: Class<E>,
