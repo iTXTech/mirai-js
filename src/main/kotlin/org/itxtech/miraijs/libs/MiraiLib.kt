@@ -1,5 +1,5 @@
 @file:Suppress("unused", "MemberVisibilityCanBePrivate")
-package org.itxtech.miraijs.plugin.libs
+package org.itxtech.miraijs.libs
 
 import kotlinx.coroutines.*
 import net.mamoe.kjbb.JvmBlockingBridge
@@ -8,18 +8,20 @@ import net.mamoe.mirai.contact.*
 import net.mamoe.mirai.event.*
 import net.mamoe.mirai.event.events.*
 import net.mamoe.mirai.message.data.*
-import org.itxtech.miraijs.plugin.PluginLib
+import org.itxtech.miraijs.PluginLib
+import org.itxtech.miraijs.PluginScope
 import org.mozilla.javascript.Context
 import org.mozilla.javascript.Scriptable
 import org.mozilla.javascript.ScriptableObject
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
 
-object MiraiLib : PluginLib() {
+class MiraiLib(plugin: PluginScope) : PluginLib(plugin) {
+    @JvmSynthetic
     override val nameInJs: String = "mirai"
 
     @JvmSynthetic
-    override fun import(scope: Scriptable, context: Context) {
+    override fun importTo(scope: Scriptable, context: Context) {
         context.evaluateString(
             scope, """
             importPackage(net.mamoe.mirai);
@@ -34,7 +36,7 @@ object MiraiLib : PluginLib() {
             const $nameInJs = Packages.net.mamoe.mirai;
         """.trimIndent(), "importMirai", 1, null
         )
-        ScriptableObject.putProperty(scope, nameInJs + "Kt", Context.javaToJS(this, scope))
+        ScriptableObject.putProperty(scope, "${nameInJs}Kt", Context.javaToJS(this, scope))
     }
 
     fun <E : Event> wrapEventChannel(eventChannel: EventChannel<E>) =
@@ -318,12 +320,9 @@ object MiraiLib : PluginLib() {
     }
 
     @JvmField
-    val utils = LinearSyncHelperKtWrapper
+    val utils = LinearSyncKtWrapper
 
-    //mostly copy from: net.mamoe.mirai.event.syncFromEvent and nextMessage
-    //modify to make js caller comfortable!
-    @Suppress("DeferredIsResult")
-    object LinearSyncHelperKtWrapper {
+    object LinearSyncKtWrapper {
         @JvmOverloads
         @JvmBlockingBridge
         suspend fun <E : Event, R : Any> syncFromEvent(
@@ -334,7 +333,7 @@ object MiraiLib : PluginLib() {
         ): R? {
             require(timeoutMillis == -1L || timeoutMillis > 0) { "timeoutMillis must be -1 or > 0" }
             return withTimeoutOrNullOrCoroutineScope(timeoutMillis) {
-                this@LinearSyncHelperKtWrapper.syncFromEventImpl(clazz, this, priority) {
+                syncFromEventImpl(clazz, this, priority) {
                     samCallback.call(it)
                 }
             }

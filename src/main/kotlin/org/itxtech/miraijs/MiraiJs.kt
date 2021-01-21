@@ -24,6 +24,7 @@
 
 package org.itxtech.miraijs
 
+import kotlinx.coroutines.launch
 import net.mamoe.mirai.console.extension.PluginComponentStorage
 import net.mamoe.mirai.console.plugin.jvm.JvmPluginDescriptionBuilder
 import net.mamoe.mirai.console.plugin.jvm.KotlinPlugin
@@ -37,14 +38,16 @@ object MiraiJs : KotlinPlugin(
 ) {
 
     override fun PluginComponentStorage.onLoad() {
-
+        PluginManager.loadPlugins()
     }
 
     override fun onEnable() {
-
+        MiraiJs.launch {
+            PluginManager.waitLoadPluginsJob()
+            PluginManager.executePlugins()
+        }
     }
 
     override fun onDisable() {
-
     }
 }

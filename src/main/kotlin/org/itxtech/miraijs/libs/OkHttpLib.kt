@@ -1,14 +1,16 @@
-package org.itxtech.miraijs.plugin.libs
+package org.itxtech.miraijs.libs
 
-import org.itxtech.miraijs.plugin.PluginLib
+import org.itxtech.miraijs.PluginLib
+import org.itxtech.miraijs.PluginScope
 import org.mozilla.javascript.Context
 import org.mozilla.javascript.Scriptable
 
-object OkHttpLib : PluginLib() {
+class OkHttpLib(plugin: PluginScope) : PluginLib(plugin) {
+    @JvmSynthetic
     override val nameInJs: String = "http"
 
     @JvmSynthetic
-    override fun import(scope: Scriptable, context: Context) {
+    override fun importTo(scope: Scriptable, context: Context) {
         //TODO: coroutine.asyncFromGlobalScope in http.request
         context.evaluateString(
             scope, """
