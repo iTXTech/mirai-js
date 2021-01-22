@@ -52,7 +52,7 @@ class PluginPackage(file: File) {
         }
     }
 
-    suspend fun consumeScriptReader(block: suspend InputStreamReader.(String) -> Unit) {
+    suspend fun consumeScriptReaders(block: suspend InputStreamReader.(String) -> Unit) {
         scriptList.forEach { (s, zipEntry) ->
             val inputStreamReader = InputStreamReader(zipFile.getInputStream(zipEntry))
             block(inputStreamReader, s)

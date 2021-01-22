@@ -25,9 +25,12 @@
 package org.itxtech.miraijs
 
 import kotlinx.coroutines.launch
+import net.mamoe.mirai.console.command.CommandManager.INSTANCE.register
 import net.mamoe.mirai.console.extension.PluginComponentStorage
+import net.mamoe.mirai.console.extensions.PluginLoaderProvider
 import net.mamoe.mirai.console.plugin.jvm.JvmPluginDescriptionBuilder
 import net.mamoe.mirai.console.plugin.jvm.KotlinPlugin
+import net.mamoe.mirai.console.util.ConsoleExperimentalApi
 
 object MiraiJs : KotlinPlugin(
     JvmPluginDescriptionBuilder("org.itxtech.miraijs.MiraiJs", "1.2.1")
@@ -37,13 +40,15 @@ object MiraiJs : KotlinPlugin(
         .build()
 ) {
 
+    @ConsoleExperimentalApi
     override fun PluginComponentStorage.onLoad() {
+        JpmCommand.register()
         PluginManager.loadPlugins()
     }
 
     override fun onEnable() {
         MiraiJs.launch {
-            PluginManager.waitLoadPluginsJob()
+            PluginManager.waitLoadPluginsJobs()
             PluginManager.executePlugins()
         }
     }
