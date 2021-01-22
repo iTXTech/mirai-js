@@ -11,7 +11,6 @@ class OkHttpLib(plugin: PluginScope) : PluginLib(plugin) {
 
     @JvmSynthetic
     override fun importTo(scope: Scriptable, context: Context) {
-        //TODO: coroutine.asyncFromGlobalScope in http.request
         context.evaluateString(
             scope, """
             /*
@@ -77,7 +76,7 @@ class OkHttpLib(plugin: PluginScope) : PluginLib(plugin) {
                     if(!coroutine) {
                         return requestImpl();
                     } else {
-                        return coroutine.asyncFromGlobalScope((coroutineScope) => {
+                        return coroutine.async((coroutineScope) => {
                             return requestImpl();
                         }).await();
                     }
