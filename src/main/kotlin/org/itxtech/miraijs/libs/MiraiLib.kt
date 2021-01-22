@@ -141,7 +141,6 @@ class MiraiLib(plugin: PluginScope) : PluginLib(plugin) {
                 samCallback: MiraiLambdaInterface.MessageListenerSAMInterface<GroupTempMessageEvent, NormalMember, Unit>
             ) = self.sentByGroupTemp().invoke { samCallback.call(this.cast(), this.cast()) }
 
-            //TODO: seems doesn't work
             fun sentFrom(
                 group: Long,
                 samCallback: MiraiLambdaInterface.MessageListenerSAMInterface<GroupMessageEvent, Group, Unit>
@@ -282,7 +281,6 @@ class MiraiLib(plugin: PluginScope) : PluginLib(plugin) {
                 samCallback: MiraiLambdaInterface.MessageListenerSAMInterface<GroupTempMessageEvent, Unit, R>
             ) = self.sentByGroupTemp().invoke { samCallback.call(this.cast(), Unit) }
 
-            //TODO: seems doesn't work
             fun sentFrom(
                 group: Long,
                 samCallback: MiraiLambdaInterface.MessageListenerSAMInterface<GroupMessageEvent, Unit, R>
@@ -339,7 +337,6 @@ class MiraiLib(plugin: PluginScope) : PluginLib(plugin) {
             }
         }
 
-        //TODO: add a asyncFromEvent that uses plugin coroutine scope
         @JvmOverloads
         fun <E : Event, R : Any> asyncFromEvent(
             coroutineScope: CoroutineScope,
