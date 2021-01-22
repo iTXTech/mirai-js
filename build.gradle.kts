@@ -8,7 +8,7 @@ plugins {
 }
 
 group = "org.itxtech"
-version = "1.2.1"
+version = "2.0-M1"
 description = "强大的 Mirai JavaScript 插件运行时"
 
 val vcs = "https://github.com/iTXTech/mirai-js"
