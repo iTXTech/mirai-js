@@ -21,7 +21,7 @@ import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.coroutines.resume
 
 @Suppress("FunctionName", "ClassName", "MemberVisibilityCanBePrivate", "PropertyName")
-class KotlinCoroutineLib(scope: PluginScope) : PluginLib(scope) {
+class KotlinCoroutineLib(plugin: PluginScope) : PluginLib(plugin) {
     @JvmSynthetic
     override val nameInJs = "coroutine"
 
@@ -30,10 +30,11 @@ class KotlinCoroutineLib(scope: PluginScope) : PluginLib(scope) {
         ScriptableObject.putProperty(scope, nameInJs, Context.javaToJS(this, scope))
     }
 
-    //TODO: provide plugin coroutine scope
-
     @JvmField
     val Dispatchers = kotlinx.coroutines.Dispatchers
+
+    @JvmField
+    val currentScope = pluginScope as CoroutineScope
 
     class CoroutineContextJsImpl(private val self: kotlin.coroutines.CoroutineContext) {
         fun plus(other: CoroutineContextJsImpl) = CoroutineContextJsImpl(self.plus(other.self))
@@ -131,23 +132,37 @@ class KotlinCoroutineLib(scope: PluginScope) : PluginLib(scope) {
     fun launchFromGlobalScope(samCallback: KtCoroutineLambdaInterface.CoroutineScopeSAMCallback) =
         GlobalScope.launch { samCallback.call(this) }
 
-    //TODO: create launchFromPluginScope(callback) and launch(callback) that launch coroutine in plugin scope
+    fun launchFromPluginScope(
+        samCallback: KtCoroutineLambdaInterface.CoroutineScopeSAMCallback
+    ) = pluginScope.launch(context = pluginScope.coroutineContext) { samCallback.call(this) }
 
     fun launch(
         coroutineScope: CoroutineScope,
         samCallback: KtCoroutineLambdaInterface.CoroutineScopeSAMCallback
     ) = coroutineScope.launch(coroutineScope.coroutineContext) { samCallback.call(this) }
 
+    fun launch(
+        samCallback: KtCoroutineLambdaInterface.CoroutineScopeSAMCallback
+    ) = launchFromPluginScope(samCallback)
+
     fun <T> asyncFromGlobalScope(
         samCallback: KtCoroutineLambdaInterface.CoroutineScopeSAMCallbackWithReturnedValue<T>
     ) = DeferredJsImpl(GlobalScope.async { samCallback.call(this) })
 
-    //TODO: create asyncFromPluginScope(callback) and async(callback) that launch async in plugin scope
+    fun <T> asyncFromPluginScope(
+        samCallback: KtCoroutineLambdaInterface.CoroutineScopeSAMCallbackWithReturnedValue<T>
+    ) = DeferredJsImpl(pluginScope.async(context = pluginScope.coroutineContext) {
+        samCallback.call(this)
+    })
 
     fun <T> async(
         coroutineScope: CoroutineScope,
         samCallback: KtCoroutineLambdaInterface.CoroutineScopeSAMCallbackWithReturnedValue<T>
     ) = DeferredJsImpl(coroutineScope.async(coroutineScope.coroutineContext) { samCallback.call(this) })
+
+    fun <T> async(
+        samCallback: KtCoroutineLambdaInterface.CoroutineScopeSAMCallbackWithReturnedValue<T>
+    ) = asyncFromPluginScope(samCallback)
 
     class DeferredJsImpl<T>(private val deferred: Deferred<T>) {
         @JvmBlockingBridge
