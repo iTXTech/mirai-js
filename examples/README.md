@@ -25,21 +25,13 @@ myplugin.zip
 ```javascript
 {
     // 插件ID，必须是独一无二的，否则会冲突。
-    "id"
-:
-    "me.myname.testplugin",
-        // 插件名称，可以为空。
-        "name"
-:
-    "TestPlugin",
-        // 插件作者，可以为空。
-        "author"
-:
-    "PluginAuthor",
-        // 插件描述，可以为空。
-        "description"
-:
-    "This is a test mirai-js plugin."
+    "id": "me.myname.testplugin",
+    // 插件名称，可以为空。
+    "name": "TestPlugin",
+    // 插件作者，可以为空。
+    "author": "PluginAuthor",
+    // 插件描述，可以为空。
+    "description": "This is a test mirai-js plugin."
 }
 ```
 
