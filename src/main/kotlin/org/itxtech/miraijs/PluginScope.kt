@@ -1,8 +1,11 @@
 package org.itxtech.miraijs
 
 import kotlinx.coroutines.*
-import net.mamoe.mirai.console.util.CoroutineScopeUtils.childScope
+import net.mamoe.mirai.console.command.CommandManager.INSTANCE.unregister
+import net.mamoe.mirai.console.command.RawCommand
 import org.itxtech.miraijs.`package`.PluginPackage
+import org.itxtech.miraijs.libs.JSCommand
+import org.itxtech.miraijs.libs.PrimitivePluginData
 import org.mozilla.javascript.Context
 import org.mozilla.javascript.ImporterTopLevel
 import org.mozilla.javascript.Script
@@ -11,11 +14,9 @@ import kotlin.coroutines.CoroutineContext
 
 @Suppress("MemberVisibilityCanBePrivate")
 class PluginScope(private val pluginPackage: PluginPackage) : CoroutineScope {
-
     val name = pluginPackage.config!!.name
     val id = pluginPackage.config!!.id
     val author = pluginPackage.config!!.author
-
 
     private val pluginJob = SupervisorJob()
     override val coroutineContext: CoroutineContext
@@ -30,7 +31,14 @@ class PluginScope(private val pluginPackage: PluginPackage) : CoroutineScope {
 
     val dataFolder = File(PluginManager.pluginData.absolutePath + File.separatorChar + id)
 
-    suspend fun init() = withContext(dispatcher) { //set propriety
+    /*
+     * library scope
+     */
+    val registeredCommands = mutableListOf<JSCommand>()
+    val data = PrimitivePluginData(name)
+
+    @Suppress("BlockingMethodInNonBlockingContext")
+    suspend fun init() = withContext(coroutineContext) { //set propriety
         ctx = Context.enter()
         ctx.optimizationLevel = PluginManager.optimizationLevel
         ctx.languageVersion = Context.VERSION_ES6
@@ -41,19 +49,14 @@ class PluginScope(private val pluginPackage: PluginPackage) : CoroutineScope {
         knownPluginLibrary.forEach {
             it.constructors.first().call(this@PluginScope).importTo(scope, ctx)
         }
-        dataFolder.mkdirs()
+        MiraiJs.withConsolePluginContext { data.reload() }
     }
 
     @Suppress("BlockingMethodInNonBlockingContext")
-    suspend fun compileScripts() = withContext(dispatcher) {
+    suspend fun compileScripts() = withContext(coroutineContext) {
         try {
             pluginPackage.consumeScriptReaders {
-                scripts[it] = ctx.compileReader(
-                    this,
-                    "${name}#$it",
-                    1,
-                    null
-                )
+                scripts[it] = ctx.compileReader(this, "${name}#$it", 1, null)
             }
         } catch (ex: Exception) {
             unload()
@@ -61,7 +64,7 @@ class PluginScope(private val pluginPackage: PluginPackage) : CoroutineScope {
         }
     }
 
-    fun load() = launch(dispatcher) {
+    fun load() = launch(coroutineContext) {
         try {
             val mainScript = scripts.filterKeys { it == "main" }
             if (mainScript.count() == 0) {
@@ -79,14 +82,16 @@ class PluginScope(private val pluginPackage: PluginPackage) : CoroutineScope {
         }
     }
 
-    fun unload() = launch(dispatcher) {
+    fun unload() = launch(coroutineContext) {
         Context.exit()
+        registeredCommands.forEach { it.unregister() }
         pluginJob.cancelChildren()
         pluginJob.cancelAndJoin()
     }
 
-    fun reload() = launch(dispatcher) {
+    fun reload() = launch(coroutineContext) {
         Context.exit()
+        registeredCommands.forEach { it.unregister() }
         init()
         compileScripts()
         load()
