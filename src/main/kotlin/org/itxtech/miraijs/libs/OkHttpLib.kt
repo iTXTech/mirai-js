@@ -223,7 +223,7 @@ class OkHttpLib(plugin: PluginScope) : PluginLib(plugin) {
                 }
                 return http;
             }());
-        """.trimIndent(), "importOkHttp", 1, null
+        """.trimIndent(), "importOkHttpLib", 1, null
         )
     }
 }
