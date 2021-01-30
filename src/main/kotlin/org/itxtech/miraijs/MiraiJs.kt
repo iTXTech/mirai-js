@@ -31,6 +31,7 @@ import net.mamoe.mirai.console.extensions.PluginLoaderProvider
 import net.mamoe.mirai.console.plugin.jvm.JvmPluginDescriptionBuilder
 import net.mamoe.mirai.console.plugin.jvm.KotlinPlugin
 import net.mamoe.mirai.console.util.ConsoleExperimentalApi
+import org.itxtech.miraijs.libs.PrimitivePluginData
 
 object MiraiJs : KotlinPlugin(
     JvmPluginDescriptionBuilder("org.itxtech.miraijs.MiraiJs", "2.0-M1")
@@ -53,6 +54,9 @@ object MiraiJs : KotlinPlugin(
         }
     }
 
+    fun <T> withConsolePluginContext(block: KotlinPlugin.() -> T) = block(this)
+
     override fun onDisable() {
+
     }
 }
