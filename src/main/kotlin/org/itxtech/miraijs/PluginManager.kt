@@ -30,27 +30,25 @@ object PluginManager {
     fun loadPlugins() {
         if (pluginFolder.isDirectory) {
             pluginFolder.listFiles()?.asSequence()?.forEach {
-                MiraiJs.launch(loadPluginDispatcher) {
-                    loadPluginsLock.withLock {
-                        try {
-                            val `package` = PluginPackage(it)
-                            if (plugins.filter { it.key == `package`.config!!.id }.count() != 0) {
-                                MiraiJs.logger.error("Conflict to load ${`package`.config!!.name}(${`package`.config!!.id}): already loaded.")
-                            } else {
-                                MiraiJs.logger.info("Loading ${`package`.config!!.name}.")
-                                `package`.extractResources(
-                                    File(pluginData.absolutePath + File.separatorChar + `package`.config!!.id)
-                                )
-                                val pluginScope = PluginScope(`package`)
-                                pluginScope.init()
-                                pluginScope.compileScripts()
-                                plugins[`package`.config!!.id] = pluginScope
-                            }
-                        } catch (ex: Exception) {
-                            MiraiJs.logger.error("Error while loading ${it.name}: $ex")
+                MiraiJs.launch(loadPluginDispatcher) { loadPluginsLock.withLock {
+                    try {
+                        val `package` = PluginPackage(it)
+                        if (plugins.filter { it.key == `package`.config!!.id }.count() != 0) {
+                            MiraiJs.logger.error("Conflict to load ${`package`.config!!.name}(${`package`.config!!.id}): already loaded.")
+                        } else {
+                            MiraiJs.logger.info("Loading ${`package`.config!!.name}.")
+                            `package`.extractResources(
+                                File(pluginData.absolutePath + File.separatorChar + `package`.config!!.id)
+                            )
+                            val pluginScope = PluginScope(`package`)
+                            pluginScope.init()
+                            pluginScope.compileScripts()
+                            plugins[`package`.config!!.id] = pluginScope
                         }
+                    } catch (ex: Exception) {
+                        MiraiJs.logger.error("Error while loading ${it.name}: $ex")
                     }
-                }.also { loadPluginsJobs.add(it) }
+                } }.also { loadPluginsJobs.add(it) }
             }
             MiraiJs.launch(loadPluginDispatcher) {
                 waitLoadPluginsJobs()
@@ -66,18 +64,21 @@ object PluginManager {
         }
     }
 
-    fun reloadPlugin(id: String) {
+   /* fun reloadPlugin(id: String) {
         val p = plugins[id]
         if (p != null) {
             p.reload()
         } else MiraiJs.logger.error("Plugin $id not found.")
-    }
+    }*/
 
-    fun unloadPlugin(id: String) {
-        val p = plugins[id]
-        if (p != null) {
-            p.unload()
-        } else MiraiJs.logger.error("Plugin $id not found.")
+    suspend fun unloadPlugin(id: String) = MiraiJs.launch(loadPluginDispatcher) {
+        plugins[id].run {
+            if(this != null) {
+                MiraiJs.logger.info("Waiting for plugin $name($id) unload process...")
+                unload()
+                MiraiJs.logger.info("Successfully unload plugin $name($id)")
+            } else MiraiJs.logger.error("Plugin $id not found.")
+        }
     }
 
     suspend fun waitLoadPluginsJobs() = loadPluginsJobs.joinAll()
@@ -89,15 +90,15 @@ object JpmCommand : CompositeCommand(
     MiraiJs, "jpm", "MiraiJs插件管理器"
 ) {
 
-    @SubCommand
+    /*@SubCommand
     @Description("Reload a plugin.")
     suspend fun CommandSender.reload(@Name("Plugin Id") id: String) {
         PluginManager.reloadPlugin(id)
-    }
+    }*/
 
     @SubCommand
     @Description("Unload a plugin and disable it.")
     suspend fun CommandSender.unload(@Name("Plugin Id") id: String) {
-        PluginManager.reloadPlugin(id)
+        PluginManager.unloadPlugin(id)
     }
 }
