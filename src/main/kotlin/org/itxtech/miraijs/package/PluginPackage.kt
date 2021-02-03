@@ -42,6 +42,7 @@ class PluginPackage(file: File) {
                         }
                     }
                 }
+                zipInputStream.close()
                 if (config == null) throw Exception("No plugin config found.")
             }
         } catch (ex: Exception) {
@@ -89,6 +90,11 @@ class PluginPackage(file: File) {
     private fun readString(isReader: InputStreamReader, close: Boolean = false) = buildString {
         isReader.readLines().forEach { append(it) }
         if (close) isReader.close()
+    }
+
+    @Suppress("BlockingMethodInNonBlockingContext")
+    suspend fun closeAndRelease() = withContext(Dispatchers.IO) {
+        zipFile.close()
     }
 
 }
