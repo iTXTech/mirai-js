@@ -19,7 +19,7 @@ class PluginScope(private val pluginPackage: PluginPackage) : CoroutineScope {
     val author = pluginPackage.config!!.author
 
     //Parent of all jobs created by plugin
-    val pluginParentJob = Job()
+    val pluginParentJob = SupervisorJob()
     //Plugin processing(loading, unloading, etc...)
     override val coroutineContext: CoroutineContext
         get() = MiraiJs.coroutineContext + pluginParentJob
