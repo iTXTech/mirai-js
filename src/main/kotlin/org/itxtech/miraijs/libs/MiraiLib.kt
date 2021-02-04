@@ -10,6 +10,7 @@ import net.mamoe.mirai.event.events.*
 import net.mamoe.mirai.message.data.*
 import org.itxtech.miraijs.PluginLib
 import org.itxtech.miraijs.PluginScope
+import org.itxtech.miraijs.utils.KtLambdaInterfaceBridge
 import org.mozilla.javascript.Context
 import org.mozilla.javascript.Scriptable
 import org.mozilla.javascript.ScriptableObject
@@ -44,7 +45,7 @@ class MiraiLib(plugin: PluginScope) : PluginLib(plugin) {
 
     class EventChannelKtWrapper<E : Event>(val self: EventChannel<E>) {
         //EventChannel.filter is currently not available for Java
-        fun filter(samCallback: MiraiLambdaInterface.EventChannelFilterSAMCallback<E>) =
+        fun filter(samCallback: KtLambdaInterfaceBridge.SingleArgument<E, Boolean>) =
             EventChannelKtWrapper(self.filter { samCallback.call(it) })
 
         //EventChannel.subscribeMessages is kotlin-only function.
@@ -53,7 +54,7 @@ class MiraiLib(plugin: PluginScope) : PluginLib(plugin) {
             coroutineContext: CoroutineContext = EmptyCoroutineContext,
             concurrencyKind: ConcurrencyKind = ConcurrencyKind.CONCURRENT,
             priority: EventPriority = EventPriority.MONITOR,
-            samCallBack: MiraiLambdaInterface.EventChannelSubscribeMessagesSAMCallback<R>
+            samCallBack: KtLambdaInterfaceBridge.SingleArgument<MessageEventSubscriberBuilderJsImpl, R>
         ): EventChannelKtWrapper<E> {
             self.subscribeMessages(coroutineContext, concurrencyKind, priority) {
                 samCallBack.call(MessageEventSubscriberBuilderJsImpl(this))
@@ -66,25 +67,25 @@ class MiraiLib(plugin: PluginScope) : PluginLib(plugin) {
         class MessageEventSubscriberBuilderJsImpl(val self: MessageEventSubscribersBuilder) {
             //always subscribe
             fun always(
-                samCallback: MiraiLambdaInterface.MessageListenerSAMInterface<MessageEvent, Unit, Unit>
+                samCallback: KtLambdaInterfaceBridge.DoubleArgument<MessageEvent, Unit, Unit>
             ): Listener<MessageEvent> = self.always { samCallback.call(this, Unit) }
 
             //filter from message
             @JvmOverloads
             fun case(
                 equals: String, ignoreCase: Boolean = false, trim: Boolean = true,
-                samCallback: MiraiLambdaInterface.MessageListenerSAMInterface<MessageEvent, String, Unit>
+                samCallback: KtLambdaInterfaceBridge.DoubleArgument<MessageEvent, String, Unit>
             ): Listener<MessageEvent> = self.case(equals, ignoreCase, trim) { samCallback.call(this, it) }
 
             fun match(
                 regex: org.mozilla.javascript.regexp.NativeRegExp,
-                samCallback: MiraiLambdaInterface.MessageListenerSAMInterface<MessageEvent, MatchResult, Unit>
+                samCallback: KtLambdaInterfaceBridge.DoubleArgument<MessageEvent, MatchResult, Unit>
             ) = self.matching(Regex(regex.toString())) { samCallback.call(this, it) }
 
             @JvmOverloads
             fun contains(
                 equals: String, ignoreCase: Boolean = false, trim: Boolean = true,
-                samCallback: MiraiLambdaInterface.MessageListenerSAMInterface<MessageEvent, String, Unit>
+                samCallback: KtLambdaInterfaceBridge.DoubleArgument<MessageEvent, String, Unit>
             ): Listener<MessageEvent> = self.contains(equals, ignoreCase, trim) {
                 samCallback.call(
                     this,
@@ -95,7 +96,7 @@ class MiraiLib(plugin: PluginScope) : PluginLib(plugin) {
             @JvmOverloads
             fun startWith(
                 equals: String, trim: Boolean = true,
-                samCallback: MiraiLambdaInterface.MessageListenerSAMInterface<MessageEvent, String, Unit>
+                samCallback: KtLambdaInterfaceBridge.DoubleArgument<MessageEvent, String, Unit>
             ): Listener<MessageEvent> = self.startsWith(equals, trim) {
                 samCallback.call(
                     this,
@@ -106,7 +107,7 @@ class MiraiLib(plugin: PluginScope) : PluginLib(plugin) {
             @JvmOverloads
             fun endsWith(
                 suffix: String, removeSuffix: Boolean = true, trim: Boolean = true,
-                samCallback: MiraiLambdaInterface.MessageListenerSAMInterface<MessageEvent, String, Unit>
+                samCallback: KtLambdaInterfaceBridge.DoubleArgument<MessageEvent, String, Unit>
             ): Listener<MessageEvent> = self.endsWith(suffix, removeSuffix, trim) {
                 samCallback.call(
                     this,
@@ -118,41 +119,41 @@ class MiraiLib(plugin: PluginScope) : PluginLib(plugin) {
             //filter from subject
             fun sentBy(
                 qq: Long,
-                samCallback: MiraiLambdaInterface.MessageListenerSAMInterface<FriendMessageEvent, Friend, Unit>
+                samCallback: KtLambdaInterfaceBridge.DoubleArgument<FriendMessageEvent, Friend, Unit>
             ) = self.sentBy(qq) { samCallback.call(this as FriendMessageEvent, subject) }
 
             fun sentByFriend(
-                samCallback: MiraiLambdaInterface.MessageListenerSAMInterface<FriendMessageEvent, Friend, Unit>
+                samCallback: KtLambdaInterfaceBridge.DoubleArgument<FriendMessageEvent, Friend, Unit>
             ) = self.sentByFriend { samCallback.call(this, subject) }
 
             fun sentByStranger(
-                samCallback: MiraiLambdaInterface.MessageListenerSAMInterface<StrangerMessageEvent, Stranger, Unit>
+                samCallback: KtLambdaInterfaceBridge.DoubleArgument<StrangerMessageEvent, Stranger, Unit>
             ) = self.sentByStranger { samCallback.call(this, subject) }
 
             fun sentByGroupAdmin(
-                samCallback: MiraiLambdaInterface.MessageListenerSAMInterface<GroupMessageEvent, Member, Unit>
+                samCallback: KtLambdaInterfaceBridge.DoubleArgument<GroupMessageEvent, Member, Unit>
             ) = self.sentByAdministrator().invoke { samCallback.call(this.cast(), this.cast()) }
 
             fun sentByGroupOwner(
-                samCallback: MiraiLambdaInterface.MessageListenerSAMInterface<GroupMessageEvent, Member, Unit>
+                samCallback: KtLambdaInterfaceBridge.DoubleArgument<GroupMessageEvent, Member, Unit>
             ) = self.sentByOwner().invoke { samCallback.call(this.cast(), this.cast()) }
 
             fun sentByGroupTemp(
-                samCallback: MiraiLambdaInterface.MessageListenerSAMInterface<GroupTempMessageEvent, NormalMember, Unit>
+                samCallback: KtLambdaInterfaceBridge.DoubleArgument<GroupTempMessageEvent, NormalMember, Unit>
             ) = self.sentByGroupTemp().invoke { samCallback.call(this.cast(), this.cast()) }
 
             fun sentFrom(
                 group: Long,
-                samCallback: MiraiLambdaInterface.MessageListenerSAMInterface<GroupMessageEvent, Group, Unit>
+                samCallback: KtLambdaInterfaceBridge.DoubleArgument<GroupMessageEvent, Group, Unit>
             ) = self.sentFrom(group).invoke { samCallback.call(this.cast(), this.cast()) }
 
-            fun atBot(samCallback: MiraiLambdaInterface.MessageListenerSAMInterface<MessageEvent, Unit, Unit>) =
+            fun atBot(samCallback: KtLambdaInterfaceBridge.DoubleArgument<MessageEvent, Unit, Unit>) =
                 self.atBot().invoke { samCallback.call(this.cast(), Unit) }
 
-            fun atAll(samCallback: MiraiLambdaInterface.MessageListenerSAMInterface<GroupMessageEvent, Group, Unit>) =
+            fun atAll(samCallback: KtLambdaInterfaceBridge.DoubleArgument<GroupMessageEvent, Group, Unit>) =
                 self.atAll().invoke { samCallback.call(this.cast(), this.cast()) }
 
-            fun at(qq: Long, samCallback: MiraiLambdaInterface.MessageListenerSAMInterface<MessageEvent, At, Unit>) =
+            fun at(qq: Long, samCallback: KtLambdaInterfaceBridge.DoubleArgument<MessageEvent, At, Unit>) =
                 self.at(qq).invoke {
                     samCallback.call(this.cast(),
                         this.message.filterIsInstance<At>().first { at -> at.target == qq }
@@ -161,7 +162,7 @@ class MiraiLib(plugin: PluginScope) : PluginLib(plugin) {
 
             fun <T : SingleMessage> has(
                 type: Class<T>,
-                samCallback: MiraiLambdaInterface.MessageListenerSAMInterface<MessageEvent, SingleMessage, Unit>
+                samCallback: KtLambdaInterfaceBridge.DoubleArgument<MessageEvent, SingleMessage, Unit>
             ) = self.content { message.any { it.javaClass == type } }.invoke {
                 samCallback.call(this.cast(),
                     this.message.first { m -> m.javaClass == type }
@@ -169,8 +170,8 @@ class MiraiLib(plugin: PluginScope) : PluginLib(plugin) {
             }
 
             fun content(
-                samCallbackJudge: MiraiLambdaInterface.MessageListenerSAMInterface<MessageEvent, Unit, Boolean>,
-                samCallbackExecute: MiraiLambdaInterface.MessageListenerSAMInterface<MessageEvent, Unit, Unit>
+                samCallbackJudge: KtLambdaInterfaceBridge.DoubleArgument<MessageEvent, Unit, Boolean>,
+                samCallbackExecute: KtLambdaInterfaceBridge.DoubleArgument<MessageEvent, Unit, Unit>
             ) = self
                 .content { samCallbackJudge.call(this, Unit) }
                 .invoke { samCallbackExecute.call(this.cast(), Unit) }
@@ -185,7 +186,7 @@ class MiraiLib(plugin: PluginScope) : PluginLib(plugin) {
         @JvmBlockingBridge
         suspend fun <R> selectMessages(
             timeMillis: Long = -1, filterContext: Boolean = true, priority: EventPriority = EventPriority.MONITOR,
-            samCallback: MiraiLambdaInterface.MessageEventSelectMessageSAMCallback<R>
+            samCallback: KtLambdaInterfaceBridge.SingleArgument<MessageEventSelectBuilderJsImpl<R>, R>
         ) = self.selectMessages(timeMillis, filterContext, priority) {
             samCallback.call(MessageEventSelectBuilderJsImpl(this))
         }
@@ -195,17 +196,17 @@ class MiraiLib(plugin: PluginScope) : PluginLib(plugin) {
         class MessageEventSelectBuilderJsImpl<R>(val self: MessageSelectBuilder<MessageEvent, R>) {
             //selectMessages-only function
             fun default(
-                samCallback: MiraiLambdaInterface.MessageListenerSAMInterface<MessageEvent, Unit, R>
+                samCallback: KtLambdaInterfaceBridge.DoubleArgument<MessageEvent, Unit, R>
             ) = self.default { samCallback.call(this, Unit) }
 
             fun timeoutException(
                 timeMillis: Long,
-                samCallback: MiraiLambdaInterface.MessageEventSelectTimeoutSAMCallback<Unit>
+                samCallback: KtLambdaInterfaceBridge.NoArgument<Unit>
             ) = self.timeoutException(timeMillis) { MessageSelectionTimeoutException().also { samCallback.call() } }
 
             fun timeout(
                 timeMillis: Long,
-                samCallback: MiraiLambdaInterface.MessageEventSelectTimeoutSAMCallback<R>
+                samCallback: KtLambdaInterfaceBridge.NoArgument<R>
             ) = self.timeout(timeMillis) { samCallback.call() }
 
             //copy from [MessageEventSubscriberBuilderJsImpl]
@@ -213,18 +214,18 @@ class MiraiLib(plugin: PluginScope) : PluginLib(plugin) {
             @JvmOverloads
             fun case(
                 equals: String, ignoreCase: Boolean = false, trim: Boolean = true,
-                samCallback: MiraiLambdaInterface.MessageListenerSAMInterface<MessageEvent, String, R>
+                samCallback: KtLambdaInterfaceBridge.DoubleArgument<MessageEvent, String, R>
             ) = self.case(equals, ignoreCase, trim) { samCallback.call(this, it) }
 
             fun match(
                 regex: org.mozilla.javascript.regexp.NativeRegExp,
-                samCallback: MiraiLambdaInterface.MessageListenerSAMInterface<MessageEvent, MatchResult, R>
+                samCallback: KtLambdaInterfaceBridge.DoubleArgument<MessageEvent, MatchResult, R>
             ) = self.matching(Regex(regex.toString())) { samCallback.call(this, it) }
 
             @JvmOverloads
             fun contains(
                 equals: String, ignoreCase: Boolean = true, trim: Boolean = true,
-                samCallback: MiraiLambdaInterface.MessageListenerSAMInterface<MessageEvent, String, R>
+                samCallback: KtLambdaInterfaceBridge.DoubleArgument<MessageEvent, String, R>
             ) = self.contains(equals, ignoreCase, trim) {
                 samCallback.call(
                     this,
@@ -235,7 +236,7 @@ class MiraiLib(plugin: PluginScope) : PluginLib(plugin) {
             @JvmOverloads
             fun startWith(
                 equals: String, trim: Boolean = true,
-                samCallback: MiraiLambdaInterface.MessageListenerSAMInterface<MessageEvent, String, R>
+                samCallback: KtLambdaInterfaceBridge.DoubleArgument<MessageEvent, String, R>
             ) = self.startsWith(equals, trim) {
                 samCallback.call(
                     this,
@@ -246,7 +247,7 @@ class MiraiLib(plugin: PluginScope) : PluginLib(plugin) {
             @JvmOverloads
             fun endsWith(
                 suffix: String, removeSuffix: Boolean = true, trim: Boolean = true,
-                samCallback: MiraiLambdaInterface.MessageListenerSAMInterface<MessageEvent, String, R>
+                samCallback: KtLambdaInterfaceBridge.DoubleArgument<MessageEvent, String, R>
             ) = self.endsWith(suffix, removeSuffix, trim) {
                 samCallback.call(
                     this,
@@ -258,41 +259,41 @@ class MiraiLib(plugin: PluginScope) : PluginLib(plugin) {
             //filter from subject
             fun sentBy(
                 qq: Long,
-                samCallback: MiraiLambdaInterface.MessageListenerSAMInterface<FriendMessageEvent, Unit, R>
+                samCallback: KtLambdaInterfaceBridge.DoubleArgument<FriendMessageEvent, Unit, R>
             ) = self.sentBy(qq) { samCallback.call(this as FriendMessageEvent, Unit) }
 
             fun sentByFriend(
-                samCallback: MiraiLambdaInterface.MessageListenerSAMInterface<FriendMessageEvent, Unit, R>
+                samCallback: KtLambdaInterfaceBridge.DoubleArgument<FriendMessageEvent, Unit, R>
             ) = self.sentByFriend { samCallback.call(this, Unit) }
 
             fun sentByStranger(
-                samCallback: MiraiLambdaInterface.MessageListenerSAMInterface<StrangerMessageEvent, Unit, R>
+                samCallback: KtLambdaInterfaceBridge.DoubleArgument<StrangerMessageEvent, Unit, R>
             ) = self.sentByStranger { samCallback.call(this, Unit) }
 
             fun sentByGroupAdmin(
-                samCallback: MiraiLambdaInterface.MessageListenerSAMInterface<GroupMessageEvent, Unit, R>
+                samCallback: KtLambdaInterfaceBridge.DoubleArgument<GroupMessageEvent, Unit, R>
             ) = self.sentByAdministrator().invoke { samCallback.call(this.cast(), Unit) }
 
             fun sentByGroupOwner(
-                samCallback: MiraiLambdaInterface.MessageListenerSAMInterface<GroupMessageEvent, Unit, R>
+                samCallback: KtLambdaInterfaceBridge.DoubleArgument<GroupMessageEvent, Unit, R>
             ) = self.sentByOwner().invoke { samCallback.call(this.cast(), Unit) }
 
             fun sentByGroupTemp(
-                samCallback: MiraiLambdaInterface.MessageListenerSAMInterface<GroupTempMessageEvent, Unit, R>
+                samCallback: KtLambdaInterfaceBridge.DoubleArgument<GroupTempMessageEvent, Unit, R>
             ) = self.sentByGroupTemp().invoke { samCallback.call(this.cast(), Unit) }
 
             fun sentFrom(
                 group: Long,
-                samCallback: MiraiLambdaInterface.MessageListenerSAMInterface<GroupMessageEvent, Unit, R>
+                samCallback: KtLambdaInterfaceBridge.DoubleArgument<GroupMessageEvent, Unit, R>
             ) = self.sentFrom(group).invoke { samCallback.call(this.cast(), Unit) }
 
-            fun atBot(samCallback: MiraiLambdaInterface.MessageListenerSAMInterface<MessageEvent, Unit, R>) =
+            fun atBot(samCallback: KtLambdaInterfaceBridge.DoubleArgument<MessageEvent, Unit, R>) =
                 self.atBot().invoke { samCallback.call(this.cast(), Unit) }
 
-            fun atAll(samCallback: MiraiLambdaInterface.MessageListenerSAMInterface<GroupMessageEvent, Unit, R>) =
+            fun atAll(samCallback: KtLambdaInterfaceBridge.DoubleArgument<GroupMessageEvent, Unit, R>) =
                 self.atAll().invoke { samCallback.call(this.cast(), Unit) }
 
-            fun at(qq: Long, samCallback: MiraiLambdaInterface.MessageListenerSAMInterface<MessageEvent, At, R>) =
+            fun at(qq: Long, samCallback: KtLambdaInterfaceBridge.DoubleArgument<MessageEvent, At, R>) =
                 self.at(qq).invoke {
                     samCallback.call(this.cast(),
                         this.message.filterIsInstance<At>().first { at -> at.target == qq }
@@ -301,7 +302,7 @@ class MiraiLib(plugin: PluginScope) : PluginLib(plugin) {
 
             fun <T : SingleMessage> has(
                 type: Class<T>,
-                samCallback: MiraiLambdaInterface.MessageListenerSAMInterface<MessageEvent, SingleMessage, R>
+                samCallback: KtLambdaInterfaceBridge.DoubleArgument<MessageEvent, SingleMessage, R>
             ) = self.content { message.any { it.javaClass == type } }.invoke {
                 samCallback.call(this.cast(),
                     this.message.first { m -> m.javaClass == type }
@@ -309,8 +310,8 @@ class MiraiLib(plugin: PluginScope) : PluginLib(plugin) {
             }
 
             fun content(
-                samCallbackJudge: MiraiLambdaInterface.MessageListenerSAMInterface<MessageEvent, Unit, Boolean>,
-                samCallbackExecute: MiraiLambdaInterface.MessageListenerSAMInterface<MessageEvent, Unit, R>
+                samCallbackJudge: KtLambdaInterfaceBridge.DoubleArgument<MessageEvent, Unit, Boolean>,
+                samCallbackExecute: KtLambdaInterfaceBridge.DoubleArgument<MessageEvent, Unit, R>
             ) = self
                 .content { samCallbackJudge.call(this, Unit) }
                 .invoke { samCallbackExecute.call(this.cast(), Unit) }
@@ -327,7 +328,7 @@ class MiraiLib(plugin: PluginScope) : PluginLib(plugin) {
             clazz: Class<E>,
             timeoutMillis: Long = -1,
             priority: EventPriority = EventPriority.MONITOR,
-            samCallback: MiraiLambdaInterface.SyncEventSAMCallback<E, R>
+            samCallback: KtLambdaInterfaceBridge.SingleArgument<E, R>
         ): R? {
             require(timeoutMillis == -1L || timeoutMillis > 0) { "timeoutMillis must be -1 or > 0" }
             return withTimeoutOrNullOrCoroutineScope(timeoutMillis) {
@@ -343,7 +344,7 @@ class MiraiLib(plugin: PluginScope) : PluginLib(plugin) {
             clazz: Class<E>,
             timeoutMillis: Long = -1,
             priority: EventPriority = EventPriority.MONITOR,
-            samCallback: MiraiLambdaInterface.SyncEventSAMCallback<E, R>
+            samCallback: KtLambdaInterfaceBridge.SingleArgument<E, R>
         ): KotlinCoroutineLib.DeferredJsImpl<R?> {
             require(timeoutMillis == -1L || timeoutMillis > 0) { "timeoutMillis must be -1 or > 0" }
             return KotlinCoroutineLib.DeferredJsImpl(
@@ -359,9 +360,9 @@ class MiraiLib(plugin: PluginScope) : PluginLib(plugin) {
             clazz: Class<E>,
             timeoutMillis: Long = -1,
             priority: EventPriority = EventPriority.MONITOR,
-            samCallback: MiraiLambdaInterface.SyncEventSAMCallback<E, Boolean> =
-                object : MiraiLambdaInterface.SyncEventSAMCallback<E, Boolean> {
-                    override fun call(event: E): Boolean {
+            samCallback: KtLambdaInterfaceBridge.SingleArgument<E, Boolean> =
+                object : KtLambdaInterfaceBridge.SingleArgument<E, Boolean> {
+                    override fun call(arg: E): Boolean {
                         return true
                     }
                 }
@@ -417,32 +418,5 @@ class MiraiLib(plugin: PluginScope) : PluginLib(plugin) {
                 withTimeoutOrNull(timeoutMillis, block)
             }
         }
-    }
-
-}
-
-object MiraiLambdaInterface {
-    interface EventChannelFilterSAMCallback<T> {
-        fun call(value: T): Boolean
-    }
-
-    interface MessageListenerSAMInterface<T : MessageEvent, V, R> {
-        fun call(event: T, value: V): R
-    }
-
-    interface EventChannelSubscribeMessagesSAMCallback<R> {
-        fun call(msgSubscribersBuilder: MiraiLib.EventChannelKtWrapper.MessageEventSubscriberBuilderJsImpl): R
-    }
-
-    interface MessageEventSelectMessageSAMCallback<R> {
-        fun call(msgSelectBuilder: MiraiLib.MessageEventKtWrapper.MessageEventSelectBuilderJsImpl<R>): R
-    }
-
-    interface MessageEventSelectTimeoutSAMCallback<R> {
-        fun call(): R
-    }
-
-    interface SyncEventSAMCallback<E : Event, R> {
-        fun call(event: E): R
     }
 }
