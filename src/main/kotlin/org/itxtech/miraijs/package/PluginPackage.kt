@@ -37,7 +37,9 @@ class PluginPackage(file: File) {
                             }] = zipEntry!!
                         entryPath == "config.json" -> {
                             isReader = InputStreamReader(zipFile.getInputStream(zipEntry!!))
-                            config = Json.decodeFromString(readString(isReader, true))
+                            config = Json {
+                                ignoreUnknownKeys = true
+                            }.decodeFromString(readString(isReader, true))
                             isReader.close()
                         }
                     }
