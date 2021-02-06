@@ -24,16 +24,17 @@ class PluginScope(private val pluginPackage: PluginPackage) : CoroutineScope {
     override val coroutineContext: CoroutineContext
         get() = MiraiJs.coroutineContext + pluginParentJob
 
-    @OptIn(ObsoleteCoroutinesApi::class)
+    @OptIn(ObsoleteCoroutinesApi::class, ExperimentalCoroutinesApi::class)
     private val dispatcher = newSingleThreadContext(name)
-    
+
+    //catch runtime exceptions caused by plugin
     val runtimeExceptionHandler = CoroutineExceptionHandler { _, throwable ->
         MiraiJs.logger.error {
             "Exception in MiraiJs plugin $name($id) by $author.\nDetail: " +
             buildString { throwable.run {
                 append(this)
                 append("\n")
-                append(stackTrace.joinToString("\n") { "  at $it" })
+                append(stackTrace.joinToString("\n") { "\tat $it" })
             } }
         }
         cancelPluginAndItsChildrenJob()
@@ -44,6 +45,8 @@ class PluginScope(private val pluginPackage: PluginPackage) : CoroutineScope {
     private val scripts: HashMap<String, Script> = hashMapOf()
 
     val dataFolder = File(PluginManager.pluginData.absolutePath + File.separatorChar + id)
+    //represent if unload() is called by jpm
+    var isUnloadFlag: Boolean = false
 
     /*
      * library scope
@@ -64,6 +67,7 @@ class PluginScope(private val pluginPackage: PluginPackage) : CoroutineScope {
             it.constructors.first().call(this@PluginScope).importTo(scope, ctx)
         }
         MiraiJs.withConsolePluginContext { data.reload() }
+        isUnloadFlag = false
     }
 
     @Suppress("BlockingMethodInNonBlockingContext")
@@ -88,11 +92,14 @@ class PluginScope(private val pluginPackage: PluginPackage) : CoroutineScope {
         }
     }
 
-    suspend fun unload() = withContext(dispatcher) {
-        Context.exit()
-        registeredCommands.forEach { it.unregister() }
-        pluginPackage.closeAndRelease()
-        cancelPluginAndItsChildrenJobAndJoin()
+    suspend fun unload() {
+        isUnloadFlag = true
+        withContext(dispatcher) {
+            Context.exit()
+            registeredCommands.forEach { it.unregister() }
+            pluginPackage.closeAndRelease()
+            cancelPluginAndItsChildrenJobAndJoin()
+        }
     }
 
     private suspend fun cancelPluginAndItsChildrenJobAndJoin() {

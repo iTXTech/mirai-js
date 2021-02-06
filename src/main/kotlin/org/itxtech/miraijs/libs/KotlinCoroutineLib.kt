@@ -100,7 +100,7 @@ class KotlinCoroutineLib(plugin: PluginScope) : PluginLib(plugin) {
         fun isCompleted() = self.isCompleted
     }
 
-    @OptIn(ObsoleteCoroutinesApi::class)
+    @OptIn(ObsoleteCoroutinesApi::class, ExperimentalCoroutinesApi::class)
     fun newSingleThreadContext(name: String) = kotlinx.coroutines.newSingleThreadContext(name)
 
     @OptIn(ObsoleteCoroutinesApi::class)
