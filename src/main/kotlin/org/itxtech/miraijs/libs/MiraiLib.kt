@@ -366,11 +366,8 @@ class MiraiLib(plugin: PluginScope) : PluginLib(plugin) {
                         return true
                     }
                 }
-        ): E? {
-            require(timeoutMillis == -1L || timeoutMillis > 0) { "timeoutMillis must be -1 or > 0" }
-            return withTimeoutOrNullOrCoroutineScope(timeoutMillis) {
-                nextEventImpl(clazz, this, priority) { samCallback.call(it) }
-            }
+        ): E? = withTimeoutOrNullOrCoroutineScope(timeoutMillis) {
+            nextEventImpl(clazz, this, priority) { samCallback.call(it) }
         }
 
         private suspend fun <E : Event, R> syncFromEventImpl(
