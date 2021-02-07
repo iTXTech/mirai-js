@@ -21,7 +21,7 @@ class PluginScope(private val pluginPackage: PluginPackage) : CoroutineScope {
     val author = pluginPackage.config!!.author
 
     //Parent of all jobs created by plugin
-    val pluginParentJob = SupervisorJob()
+    lateinit var pluginParentJob: CompletableJob
     //Plugin processing(loading, unloading, etc...)
     override val coroutineContext: CoroutineContext
         get() = MiraiJs.coroutineContext + pluginParentJob + runtimeExceptionHandler
@@ -80,6 +80,7 @@ class PluginScope(private val pluginPackage: PluginPackage) : CoroutineScope {
             it.constructors.first().call(this@PluginScope).importTo(scope, ctx)
         }
         MiraiJs.withConsolePluginContext { data.reload() }
+        pluginParentJob = SupervisorJob()
         isUnloadFlag = false
     }
 
@@ -134,6 +135,21 @@ class PluginScope(private val pluginPackage: PluginPackage) : CoroutineScope {
         cancelPluginAndItsChildrenJobAndJoin()
     }
 
+    suspend fun reload() {
+        isUnloadFlag = true
+        withContext(dispatcher) {
+            Context.exit()
+            registeredCommands.run {
+                forEach { it.unregister() }
+                clear()
+            }
+        }
+        cancelPluginAndItsChildrenJobAndJoin()
+        init()
+        compileScripts()
+        load()
+    }
+
     private suspend fun cancelPluginAndItsChildrenJobAndJoin() {
         pluginParentJob.runCatching {
             cancelChildren()
@@ -148,5 +164,5 @@ class PluginScope(private val pluginPackage: PluginPackage) : CoroutineScope {
         }
     }
 
-    override fun toString() = "MiraiJs plugin $name($id) by $author"
+    override fun toString() = "$name($id) by $author"
 }

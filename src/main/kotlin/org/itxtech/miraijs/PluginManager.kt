@@ -6,6 +6,7 @@ import kotlinx.coroutines.sync.withLock
 import net.mamoe.mirai.console.command.CommandSender
 import net.mamoe.mirai.console.command.CompositeCommand
 import net.mamoe.mirai.console.util.ConsoleExperimentalApi
+import net.mamoe.mirai.utils.info
 import org.itxtech.miraijs.`package`.PluginPackage
 import java.io.File
 import java.lang.Exception
@@ -21,11 +22,10 @@ object PluginManager {
 
     private val plugins: HashMap<String, PluginScope> = hashMapOf()
 
-    @OptIn(ObsoleteCoroutinesApi::class)
+    @OptIn(ObsoleteCoroutinesApi::class, ExperimentalCoroutinesApi::class)
     private val loadPluginDispatcher = newSingleThreadContext("JsPluginLoader")
     private val loadPluginsJobs = arrayListOf<Job>()
     private val loadPluginsLock = Mutex()
-
 
     fun loadPlugins() {
         if (pluginFolder.isDirectory) {
@@ -52,7 +52,7 @@ object PluginManager {
             }
             MiraiJs.launch(loadPluginDispatcher) {
                 waitLoadPluginsJobs()
-                MiraiJs.logger.info("Loaded ${plugins.count()} plugins.")
+                MiraiJs.logger.info("Loaded ${plugins.count()} plugin(s).")
             }
 
         } else throw RuntimeException("Plugin folder is not a folder.")
@@ -64,22 +64,34 @@ object PluginManager {
         }
     }
 
-   /* fun reloadPlugin(id: String) {
-        val p = plugins[id]
-        if (p != null) {
-            p.reload()
-        } else MiraiJs.logger.error("Plugin $id not found.")
-    }*/
 
     suspend fun unloadPlugin(id: String) = MiraiJs.launch(loadPluginDispatcher) {
         plugins[id].run {
             if(this != null) {
                 MiraiJs.logger.info("Waiting for plugin $name($id) unload process...")
                 unload()
+                plugins.remove(id)
                 MiraiJs.logger.info("Successfully unload plugin $name($id)")
             } else MiraiJs.logger.error("Plugin $id not found.")
         }
     }
+
+    suspend fun reloadPlugin(id: String) = MiraiJs.launch(loadPluginDispatcher) {
+        plugins[id].run {
+            if(this != null) {
+                MiraiJs.logger.info("Reloading plugin $name($id)...")
+                reload()
+                MiraiJs.logger.info("Successfully reload plugin $name($id)")
+            } else MiraiJs.logger.error("Plugin $id not found.")
+        }
+    }
+
+    suspend fun listPlugins() = MiraiJs.logger.info { buildString {
+        append("Loaded ${plugins.count()} plugin(s): ")
+        plugins.forEach {
+            append("\n\t${it.value}")
+        }
+    } }
 
     suspend fun waitLoadPluginsJobs() = loadPluginsJobs.joinAll()
 }
@@ -89,16 +101,21 @@ object PluginManager {
 object JpmCommand : CompositeCommand(
     MiraiJs, "jpm", "MiraiJs插件管理器"
 ) {
-
-    /*@SubCommand
+    @SubCommand
     @Description("Reload a plugin.")
     suspend fun CommandSender.reload(@Name("Plugin Id") id: String) {
         PluginManager.reloadPlugin(id)
-    }*/
+    }
 
     @SubCommand
     @Description("Unload a plugin and disable it.")
     suspend fun CommandSender.unload(@Name("Plugin Id") id: String) {
         PluginManager.unloadPlugin(id)
+    }
+
+    @SubCommand
+    @Description("List all loaded plugin.")
+    suspend fun CommandSender.list() {
+        PluginManager.listPlugins()
     }
 }

@@ -9,7 +9,6 @@ import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
 import java.util.zip.ZipInputStream
 import kotlinx.serialization.json.Json
-import java.io.BufferedReader
 import java.io.FileOutputStream
 import java.io.InputStreamReader
 
@@ -39,7 +38,7 @@ class PluginPackage(file: File) {
                             isReader = InputStreamReader(zipFile.getInputStream(zipEntry!!))
                             config = Json {
                                 ignoreUnknownKeys = true
-                            }.decodeFromString(readString(isReader, true))
+                            }.decodeFromString(readString(isReader))
                             isReader.close()
                         }
                     }
@@ -89,9 +88,9 @@ class PluginPackage(file: File) {
         fileOutputStream.close()
     }
 
-    private fun readString(isReader: InputStreamReader, close: Boolean = false) = buildString {
+    private fun readString(isReader: InputStreamReader) = buildString {
         isReader.readLines().forEach { append(it) }
-        if (close) isReader.close()
+        isReader.close()
     }
 
     @Suppress("BlockingMethodInNonBlockingContext")
