@@ -12,5 +12,7 @@ data class PluginConfigInfo(
     @SerialName("author")
     val author: String = "<No author>",
     @SerialName("description")
-    val description: String = "<No description>"
+    val description: String = "<No description>",
+    @SerialName("order")
+    val order: List<String> = listOf("...", "test")
 )

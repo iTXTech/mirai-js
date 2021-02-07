@@ -19,6 +19,6 @@ val knownPluginLibrary = listOf(
     OkHttpLib::class,
     StorageLib::class,
     LoggerLib::class,
-    ExternalJarLoaderLib::class,
+    ExternalLibraryLoader::class,
     ConsoleCommandLib::class
 )
