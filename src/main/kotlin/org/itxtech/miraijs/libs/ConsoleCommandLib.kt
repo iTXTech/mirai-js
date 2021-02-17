@@ -11,6 +11,7 @@ import net.mamoe.mirai.console.permission.PermissionService
 import net.mamoe.mirai.message.data.MessageChain
 import org.itxtech.miraijs.PluginLib
 import org.itxtech.miraijs.PluginScope
+import org.itxtech.miraijs.utils.KtLambdaInterfaceBridge
 import org.mozilla.javascript.Context
 import org.mozilla.javascript.Scriptable
 import org.mozilla.javascript.ScriptableObject
@@ -24,7 +25,7 @@ class ConsoleCommandLib(plugin: PluginScope) : PluginLib(plugin) {
         name: String, desc: String = "MiraiJS plugin ${pluginScope.name} registered command: $name",
         usage: String = "<No usage description>", prefixOptional: Boolean = false,
         alias: List<String> = listOf(), permission: Permission = RootCommandOwner.parentPermission,
-        override: Boolean = false, callback: CommandCallback
+        override: Boolean = false, callback: KtLambdaInterfaceBridge.DoubleArgument<CommandSender, MessageChain, Unit>
     ) = JSCommand(name, alias, desc, usage, prefixOptional, permission, callback).also {
         pluginScope.registeredCommands.add(it)
         it.register(override)
@@ -48,7 +49,7 @@ class JSCommand(
     usage: String,
     prefixOptional: Boolean,
     permission: Permission,
-    private val callback: CommandCallback
+    private val callback: KtLambdaInterfaceBridge.DoubleArgument<CommandSender, MessageChain, Unit>
 ) : RawCommand(
     owner = RootCommandOwner,
     primaryName = name,
@@ -69,8 +70,4 @@ object RootCommandOwner : CommandOwner {
         get() = PermissionService.INSTANCE.register(permissionId("*"), "MiraiJS root command.")
 
     override fun permissionId(name: String): PermissionId = PermissionId("miraijs", "command.$name")
-}
-
-interface CommandCallback {
-    fun call(sender: CommandSender, args: MessageChain)
 }

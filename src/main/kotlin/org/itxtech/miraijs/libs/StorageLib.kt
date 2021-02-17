@@ -1,10 +1,12 @@
 package org.itxtech.miraijs.libs
 
+import io.ktor.utils.io.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import net.mamoe.kjbb.JvmBlockingBridge
 import net.mamoe.mirai.console.data.AutoSavePluginData
 import net.mamoe.mirai.console.data.value
+import org.itxtech.miraijs.MiraiJs
 import org.itxtech.miraijs.PluginLib
 import org.itxtech.miraijs.PluginScope
 import org.mozilla.javascript.Context
@@ -61,6 +63,8 @@ class StorageLib(plugin: PluginScope) : PluginLib(plugin) {
     fun contains(key: String) = pluginScope.data.run {
         numbers.containsKey(key) || booleans.containsKey(key) || strings.containsKey(key)
     }
+
+    fun reload() = MiraiJs.withConsolePluginContext { pluginScope.data.reload() }
 
     /*
      * Resource related.

@@ -5,6 +5,7 @@ import org.itxtech.miraijs.PluginScope
 import org.mozilla.javascript.Context
 import org.mozilla.javascript.Scriptable
 import org.mozilla.javascript.ScriptableObject
+import java.io.File
 
 
 class ExternalLibraryLoader(plugin: PluginScope) : PluginLib(plugin) {
@@ -16,9 +17,16 @@ class ExternalLibraryLoader(plugin: PluginScope) : PluginLib(plugin) {
         ScriptableObject.putProperty(scope, nameInJs, Context.javaToJS(this, scope))
     }
 
+}
+
+//Default classloader for jvm
+//For Android, users need to implement IClassLoader
+/*
+object DefaultJVMClassLoader : IClassLoader {
 
 }
 
-object ExternalLibraryLoaderImpl {
+interface IClassLoader {
+    val clsFile: File
 
-}
+}*/
