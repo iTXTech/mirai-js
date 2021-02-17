@@ -23,20 +23,6 @@ class MiraiLib(plugin: PluginScope) : PluginLib(plugin) {
 
     @JvmSynthetic
     override fun importTo(scope: Scriptable, context: Context) {
-        context.evaluateString(
-            scope, """
-            importPackage(net.mamoe.mirai);
-            importPackage(net.mamoe.mirai.contract);
-            importPackage(net.mamoe.mirai.data);
-            importPackage(net.mamoe.mirai.event);
-            importPackage(net.mamoe.mirai.event.events);
-            importPackage(net.mamoe.mirai.message);
-            importPackage(net.mamoe.mirai.message.data);
-            importPackage(net.mamoe.mirai.message.action);
-            importPackage(net.mamoe.mirai.utils);
-            const $nameInJs = Packages.net.mamoe.mirai;
-        """.trimIndent(), "importMirai", 1, null
-        )
         ScriptableObject.putProperty(scope, "${nameInJs}Kt", Context.javaToJS(this, scope))
     }
 

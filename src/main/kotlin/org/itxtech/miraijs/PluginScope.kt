@@ -4,15 +4,16 @@ import kotlinx.coroutines.*
 import net.mamoe.mirai.console.command.CommandManager.INSTANCE.unregister
 import org.itxtech.miraijs.libs.JSCommand
 import org.itxtech.miraijs.libs.PrimitivePluginData
-import org.mozilla.javascript.Context
-import org.mozilla.javascript.ImporterTopLevel
-import org.mozilla.javascript.Script
+import org.mozilla.javascript.*
+import org.mozilla.javascript.Function
 import java.io.File
 import java.io.Reader
+import java.io.Serializable
+import java.lang.reflect.Member
 import kotlin.coroutines.CoroutineContext
 
 @Suppress("MemberVisibilityCanBePrivate")
-class PluginScope(val name: String) : CoroutineScope {
+class PluginScope(val name: String) : CoroutineScope, ScriptableObject() {
 
     //Parent of all jobs created by plugin
     lateinit var pluginParentJob: CompletableJob
@@ -24,14 +25,13 @@ class PluginScope(val name: String) : CoroutineScope {
     private val dispatcher = newSingleThreadContext(name)
 
     private lateinit var ctx: Context
-    private lateinit var scope: ImporterTopLevel
+    private lateinit var topLevelScope: ImporterTopLevel
+    private val moduleExports: HashMap<String, Any> = hashMapOf()
     private val scripts: HashMap<String, Script> = hashMapOf()
 
     val dataFolder = File(PluginManager.pluginData.absolutePath + File.separatorChar + name)
     //represent if unload() is called by jpm
     var isUnloadFlag: Boolean = false
-    //represent if execute is called
-    private var isExecuted: Boolean = false
 
     //catch exceptions while loading plugins
     var loadingExceptionListener: ((CoroutineContext, Throwable) -> Unit)? = null
@@ -46,6 +46,11 @@ class PluginScope(val name: String) : CoroutineScope {
     }
 
     //library scope
+    private val libInstances: HashSet<PluginLib> by lazy {
+        knownPluginLibrary.map {
+            it.constructors.first().call(this@PluginScope)
+        }.toHashSet()
+    }
     val registeredCommands = mutableListOf<JSCommand>()
     val data = PrimitivePluginData(name)
 
@@ -54,14 +59,10 @@ class PluginScope(val name: String) : CoroutineScope {
         ctx = Context.enter()
         ctx.optimizationLevel = PluginManager.optimizationLevel
         ctx.languageVersion = Context.VERSION_ES6
-        scope = ImporterTopLevel(ctx)
-        knownPluginLibrary.forEach {
-            it.constructors.first().call(this@PluginScope).importTo(scope, ctx)
-        }
+        topLevelScope = generateModuleScope()
         MiraiJs.withConsolePluginContext { data.reload() }
         pluginParentJob = SupervisorJob()
         isUnloadFlag = false
-        isExecuted = false
     }
 
     @Suppress("BlockingMethodInNonBlockingContext")
@@ -69,13 +70,34 @@ class PluginScope(val name: String) : CoroutineScope {
             = withContext(dispatcher + loadingExceptionHandler) {
         ctx.compileReader(reader, "${name}#$srcName", 1, null).also {
             scripts[srcName] = it
-            if (isExecuted) it.exec(ctx, scope)
         }
     }
 
     fun execute() = launch(dispatcher + loadingExceptionHandler) {
-        scripts.forEach { it.value.exec(ctx, scope) }
-        isExecuted = true
+        scripts["main"]!!.exec(ctx, topLevelScope)
+    }
+
+    fun generateModuleScope() : ImporterTopLevel {
+        val scriptable = ImporterTopLevel(ctx)
+        parentScope = scriptable
+        val importModuleInstance = javaClass.getMethod("js_importModule", String::class.java)
+        scriptable.put("module", scriptable,
+            ModuleFunctionObject("module", importModuleInstance, this))
+        libInstances.forEach { it.importTo(scriptable, ctx) }
+        return scriptable
+    }
+
+    @Suppress("unused")
+    fun js_importModule(moduleName: String) : Any {
+        if(moduleExports.containsKey(moduleName)) {
+            return moduleExports[moduleName]!!
+        } else if(scripts.containsKey(moduleName)) {
+            val moduleScope = generateModuleScope()
+            scripts[moduleName]!!.exec(ctx, moduleScope)
+            return ((moduleScope["module"] as ScriptableObject)["exports"] ?: Undefined.instance).also {
+                moduleExports.put(moduleName, it)
+            }
+        } else throw NoSuchFileException(File(moduleName))
     }
 
     suspend fun unload() {
@@ -103,5 +125,15 @@ class PluginScope(val name: String) : CoroutineScope {
         }
     }
 
+    override fun getClassName(): String = javaClass.name
+
     override fun toString() = "$name(${super.toString()})"
+
+    private class ModuleFunctionObject(
+        name: String, methodOrConstructor: Member, parentScope: Scriptable
+    ) : FunctionObject(name, methodOrConstructor, parentScope) {
+        override fun call(cx: Context?, scope: Scriptable?, thisObj: Scriptable?, args: Array<out Any>?): Any {
+            return super.call(cx, scope, parentScope, args)
+        }
+    }
 }
