@@ -6,6 +6,7 @@ import kotlinx.coroutines.sync.withLock
 import net.mamoe.mirai.console.command.CommandSender
 import net.mamoe.mirai.console.command.CompositeCommand
 import net.mamoe.mirai.console.util.ConsoleExperimentalApi
+import net.mamoe.mirai.utils.error
 import net.mamoe.mirai.utils.info
 import org.itxtech.miraijs.`package`.PluginPackage
 import java.io.File
@@ -20,12 +21,14 @@ object PluginManager {
     private val pluginFolder: File by lazy { File(MiraiJs.dataFolder.absolutePath + File.separatorChar + "plugins").also { it.mkdirs() } }
     val pluginData: File by lazy { File(MiraiJs.dataFolder.absolutePath + File.separatorChar + "data").also { it.mkdirs() } }
 
-    private val plugins: HashMap<String, PluginScope> = hashMapOf()
+    private val plugins: HashSet<PluginInfo> = hashSetOf()
 
     @OptIn(ObsoleteCoroutinesApi::class, ExperimentalCoroutinesApi::class)
     private val loadPluginDispatcher = newSingleThreadContext("JsPluginLoader")
     private val loadPluginsJobs = arrayListOf<Job>()
     private val loadPluginsLock = Mutex()
+    @OptIn(ObsoleteCoroutinesApi::class, ExperimentalCoroutinesApi::class)
+    val resourceDispatcher = newSingleThreadContext("JsResourceDispatcher")
 
     fun loadPlugins() {
         if (pluginFolder.isDirectory) {
@@ -33,17 +36,23 @@ object PluginManager {
                 MiraiJs.launch(loadPluginDispatcher) { loadPluginsLock.withLock {
                     try {
                         val `package` = PluginPackage(it)
-                        if (plugins.filter { it.key == `package`.config!!.id }.count() != 0) {
+                        if (plugins.filter { it.identify == `package`.config!!.id }.count() != 0) {
                             MiraiJs.logger.error("Conflict to load ${`package`.config!!.name}(${`package`.config!!.id}): already loaded.")
+                            withContext(resourceDispatcher) { `package`.closeAndRelease() }
                         } else {
                             MiraiJs.logger.info("Loading ${`package`.config!!.name}.")
-                            `package`.extractResources(
-                                File(pluginData.absolutePath + File.separatorChar + `package`.config!!.id)
-                            )
-                            val pluginScope = PluginScope(`package`)
-                            pluginScope.init()
-                            pluginScope.compileScripts()
-                            plugins[`package`.config!!.id] = pluginScope
+                            val scope = PluginScope(`package`.config!!.id).also {
+                                it.init()
+                            }
+                            withContext(resourceDispatcher) {
+                                `package`.extractResources(
+                                    File(pluginData.absolutePath + File.separatorChar + `package`.config!!.id)
+                                )
+                                `package`.consumeScriptReaders {
+                                    scope.attachScript(it, this)
+                                }
+                            }
+                            plugins.add(PluginInfo(`package`.config!!.id, `package`, scope))
                         }
                     } catch (ex: Exception) {
                         MiraiJs.logger.error("Error while loading ${it.name}: $ex")
@@ -54,46 +63,85 @@ object PluginManager {
                 waitLoadPluginsJobs()
                 MiraiJs.logger.info("Loaded ${plugins.count()} plugin(s).")
             }
-
         } else throw RuntimeException("Plugin folder is not a folder.")
     }
 
     fun executePlugins() {
-        plugins.forEach { (_, pluginScope) ->
-            pluginScope.load()
-        }
+        plugins.forEach { it.scopeObject.execute() }
     }
 
-
     suspend fun unloadPlugin(id: String) = MiraiJs.launch(loadPluginDispatcher) {
-        plugins[id].run {
+        plugins.find { it.identify == id }.run {
             if(this != null) {
-                MiraiJs.logger.info("Waiting for plugin $name($id) unload process...")
-                unload()
-                plugins.remove(id)
-                MiraiJs.logger.info("Successfully unload plugin $name($id)")
+                MiraiJs.logger.info("Waiting for plugin ${attachedPackage.config!!.name}($id) unload process...")
+                scopeObject.unload()
+                plugins.remove(this)
+                MiraiJs.logger.info("Successfully unload plugin ${attachedPackage.config!!.name}($id)")
             } else MiraiJs.logger.error("Plugin $id not found.")
         }
     }
 
     suspend fun reloadPlugin(id: String) = MiraiJs.launch(loadPluginDispatcher) {
-        plugins[id].run {
+        plugins.find { it.identify == id }.run {
             if(this != null) {
-                MiraiJs.logger.info("Reloading plugin $name($id)...")
-                reload()
-                MiraiJs.logger.info("Successfully reload plugin $name($id)")
+                MiraiJs.logger.info("Reloading plugin ${attachedPackage.config!!.name}($id)...")
+                scopeObject.run {
+                    unload()
+                    init()
+                    attachedPackage.consumeScriptReaders {
+                        attachScript(it, this)
+                    }
+                    execute()
+                }
+                MiraiJs.logger.info("Successfully reload plugin ${attachedPackage.config!!.name}($id)")
             } else MiraiJs.logger.error("Plugin $id not found.")
         }
     }
 
-    suspend fun listPlugins() = MiraiJs.logger.info { buildString {
+    fun listPlugins() = MiraiJs.logger.info { buildString {
         append("Loaded ${plugins.count()} plugin(s): ")
         plugins.forEach {
-            append("\n\t${it.value}")
+            append(it.attachedPackage.config!!.run { "\n\t$name($id) by $author" })
         }
     } }
 
     suspend fun waitLoadPluginsJobs() = loadPluginsJobs.joinAll()
+}
+
+data class PluginInfo(
+    val identify: String,
+    val attachedPackage: PluginPackage,
+    val scopeObject: PluginScope
+) {
+    init {
+        scopeObject.loadingExceptionListener = { _, throwable ->
+            MiraiJs.logger.error {
+                "Error while loading plugin ${attachedPackage.config!!.name}($identify) by ${
+                    attachedPackage.config!!.author
+                }.\nDetail: " +
+                buildString { throwable.run {
+                    append(this)
+                    append("\n")
+                    append(stackTrace.joinToString("\n") { "\tat $it" })
+                } }
+            }
+        }
+        scopeObject.runtimeExceptionListener = { _, throwable ->
+            MiraiJs.logger.error {
+                "Exception in MiraiJs plugin ${attachedPackage.config!!.name}($identify) by ${
+                    attachedPackage.config!!.author
+                }.\nDetail: " +
+                    buildString { throwable.run {
+                        append(this)
+                        append("\n")
+                        append(stackTrace.joinToString("\n") { "\tat $it" })
+                    } }
+            }
+            scopeObject.launch(PluginManager.resourceDispatcher) {
+                attachedPackage.closeAndRelease()
+            }
+        }
+    }
 }
 
 @ConsoleExperimentalApi

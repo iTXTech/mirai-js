@@ -9,6 +9,8 @@ import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
 import java.util.zip.ZipInputStream
 import kotlinx.serialization.json.Json
+import net.mamoe.mirai.utils.warning
+import org.itxtech.miraijs.MiraiJs
 import java.io.FileOutputStream
 import java.io.InputStreamReader
 
@@ -55,11 +57,35 @@ class PluginPackage(file: File) {
     }
 
     suspend fun consumeScriptReaders(block: suspend InputStreamReader.(String) -> Unit) {
-        scriptList.forEach { (s, zipEntry) ->
-            val inputStreamReader = InputStreamReader(zipFile.getInputStream(zipEntry))
-            block(inputStreamReader, s)
-            inputStreamReader.close()
+        parseLoadOrder().forEach {
+            scriptList[it].run {
+                if (this != null) {
+                    val inputStreamReader = InputStreamReader(zipFile.getInputStream(this))
+                    block(inputStreamReader, it)
+                    inputStreamReader.close()
+                } else MiraiJs.logger.warning {
+                    "Script $it declared at config in plugin ${config!!.name}(${config!!.id}) is not found."
+                }
+            }
+
         }
+    }
+
+    private fun parseLoadOrder(): List<String> {
+        val order = mutableListOf<String>()
+        config!!.order.run {
+            filterNot { it == "..." }.forEach { order.add(it) }
+            when (val dCount = filter { it == "..." }.count()) {
+                0 -> { /* stub */ }
+                else -> {
+                    if (dCount > 1) MiraiJs.logger.warning("Count of generic load symbol \"...\" is larger than 1.")
+                    val idx = indexOf("...")
+                    scriptList.map { it.key }.subtract(order).toList().asReversed().forEach { order.add(idx, it) }
+                }
+            }
+        }
+        println(order)
+        return order
     }
 
     suspend fun extractResources(pluginDataPath: File, override: Boolean = false) = withContext(Dispatchers.IO) {
