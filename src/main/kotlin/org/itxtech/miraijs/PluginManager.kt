@@ -18,7 +18,7 @@ object PluginManager {
     } catch (e: Throwable) {
         -1
     }
-    private val pluginFolder: File by lazy { File(MiraiJs.dataFolder.absolutePath + File.separatorChar + "plugins").also { it.mkdirs() } }
+    val pluginFolder: File by lazy { File(MiraiJs.dataFolder.absolutePath + File.separatorChar + "plugins").also { it.mkdirs() } }
     val pluginData: File by lazy { File(MiraiJs.dataFolder.absolutePath + File.separatorChar + "data").also { it.mkdirs() } }
 
     private val plugins: HashSet<PluginInfo> = hashSetOf()
@@ -33,31 +33,7 @@ object PluginManager {
     fun loadPlugins() {
         if (pluginFolder.isDirectory) {
             pluginFolder.listFiles()?.asSequence()?.forEach {
-                MiraiJs.launch(loadPluginDispatcher) { loadPluginsLock.withLock {
-                    try {
-                        val `package` = PluginPackage(it)
-                        if (plugins.filter { it.identify == `package`.config!!.id }.count() != 0) {
-                            MiraiJs.logger.error("Conflict to load ${`package`.config!!.name}(${`package`.config!!.id}): already loaded.")
-                            withContext(resourceDispatcher) { `package`.closeAndRelease() }
-                        } else {
-                            MiraiJs.logger.info("Loading ${`package`.config!!.name}.")
-                            val scope = PluginScope(`package`.config!!.id).also {
-                                it.init()
-                            }
-                            withContext(resourceDispatcher) {
-                                `package`.extractResources(
-                                    File(pluginData.absolutePath + File.separatorChar + `package`.config!!.id)
-                                )
-                                `package`.consumeScriptReaders {
-                                    scope.attachScript(it, this)
-                                }
-                            }
-                            plugins.add(PluginInfo(`package`.config!!.id, `package`, scope))
-                        }
-                    } catch (ex: Exception) {
-                        MiraiJs.logger.error("Error while loading ${it.name}: $ex")
-                    }
-                } }.also { loadPluginsJobs.add(it) }
+                loadPlugin(it)
             }
             MiraiJs.launch(loadPluginDispatcher) {
                 waitLoadPluginsJobs()
@@ -68,6 +44,37 @@ object PluginManager {
 
     fun executePlugins() {
         plugins.forEach { it.scopeObject.execute() }
+    }
+
+    fun loadPlugin(file: File) {
+        MiraiJs.launch(loadPluginDispatcher) { loadPluginsLock.withLock {
+            try {
+                val `package` = PluginPackage(file)
+                if (plugins.filter { it.identify == `package`.config!!.id }.count() != 0) {
+                    MiraiJs.logger.error("Conflict to load ${`package`.config!!.name}(${`package`.config!!.id}): already loaded.")
+                    withContext(resourceDispatcher) { `package`.closeAndRelease() }
+                } else if(!`package`.hasMainScript()) {
+                    MiraiJs.logger.error("Plugin ${`package`.config!!.name}(${`package`.config!!.id}) doesn't have main script.")
+                    withContext(resourceDispatcher) { `package`.closeAndRelease() }
+                } else {
+                    MiraiJs.logger.info("Loading ${`package`.config!!.name}.")
+                    val scope = PluginScope(`package`.config!!.id).also {
+                        it.init()
+                    }
+                    withContext(resourceDispatcher) {
+                        `package`.extractResources(
+                            File(pluginData.absolutePath + File.separatorChar + `package`.config!!.id)
+                        )
+                        `package`.consumeScriptReaders {
+                            scope.attachScript(it, this)
+                        }
+                    }
+                    plugins.add(PluginInfo(`package`.config!!.id, `package`, scope))
+                }
+            } catch (ex: Exception) {
+                MiraiJs.logger.error("Error while loading ${file.name}: $ex")
+            }
+        } }.also { loadPluginsJobs.add(it) }
     }
 
     suspend fun unloadPlugin(id: String) = MiraiJs.launch(loadPluginDispatcher) {
@@ -165,5 +172,11 @@ object JpmCommand : CompositeCommand(
     @Description("List all loaded plugin.")
     suspend fun CommandSender.list() {
         PluginManager.listPlugins()
+    }
+
+    @SubCommand
+    @Description("Load plugin from filesystem.")
+    suspend fun CommandSender.load(@Name("File name") name: String) {
+        PluginManager.loadPlugin(File(PluginManager.pluginFolder.toString() + File.separator + name))
     }
 }
