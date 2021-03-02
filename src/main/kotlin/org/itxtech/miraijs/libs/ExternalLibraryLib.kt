@@ -41,7 +41,7 @@ class ExternalLibraryClassLoaderJVM(
     private val attachedPluginScope: PluginScope
 ) : URLClassLoader(
     arrayOf(file.toURI().toURL()),
-    ContextFactory.getGlobal().applicationClassLoader
+    MiraiJs::class.java.classLoader
 ) {
     private val cachedClass = ConcurrentHashMap<String, Class<*>>()
 
@@ -63,7 +63,6 @@ class ExternalLibraryClassLoaderJVM(
         } catch(ex: ClassNotFoundException) { null }
     }
 
-    @JvmOverloads
     fun `package`(rootPackage: String) = NativeJavaPackage(rootPackage, this).also {
         ScriptRuntime.setObjectProtoAndParent(it, attachedPluginScope.topLevelScope)
     }
