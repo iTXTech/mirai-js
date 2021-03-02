@@ -2,13 +2,13 @@ package org.itxtech.miraijs
 
 import kotlinx.coroutines.*
 import net.mamoe.mirai.console.command.CommandManager.INSTANCE.unregister
+import org.itxtech.miraijs.libs.ExternalLibraryClassLoaderJVM
 import org.itxtech.miraijs.libs.JSCommand
 import org.itxtech.miraijs.libs.PrimitivePluginData
 import org.mozilla.javascript.*
-import org.mozilla.javascript.Function
 import java.io.File
+import java.io.FileNotFoundException
 import java.io.Reader
-import java.io.Serializable
 import java.lang.reflect.Member
 import kotlin.coroutines.CoroutineContext
 
@@ -25,7 +25,7 @@ class PluginScope(val name: String) : CoroutineScope, ScriptableObject() {
     private val dispatcher = newSingleThreadContext(name)
 
     private lateinit var ctx: Context
-    private lateinit var topLevelScope: ImporterTopLevel
+    lateinit var topLevelScope: ImporterTopLevel
     private val moduleExports: HashMap<String, Any> = hashMapOf()
     private val scripts: HashMap<String, Script> = hashMapOf()
 
@@ -53,6 +53,7 @@ class PluginScope(val name: String) : CoroutineScope, ScriptableObject() {
     }
     val registeredCommands = mutableListOf<JSCommand>()
     val data = PrimitivePluginData(name)
+    val externalLibs: HashMap<File, ExternalLibraryClassLoaderJVM> = hashMapOf()
 
     @Suppress("BlockingMethodInNonBlockingContext")
     suspend fun init() = withContext(dispatcher + loadingExceptionHandler) { //set propriety
@@ -87,7 +88,7 @@ class PluginScope(val name: String) : CoroutineScope, ScriptableObject() {
         return scriptable
     }
 
-    @Suppress("unused")
+    @Suppress("unused", "FunctionName")
     fun js_importModule(moduleName: String) : Any {
         if(moduleExports.containsKey(moduleName)) {
             return moduleExports[moduleName]!!
@@ -95,9 +96,9 @@ class PluginScope(val name: String) : CoroutineScope, ScriptableObject() {
             val moduleScope = generateModuleScope()
             scripts[moduleName]!!.exec(ctx, moduleScope)
             return ((moduleScope["module"] as ScriptableObject)["exports"] ?: Undefined.instance).also {
-                moduleExports.put(moduleName, it)
+                moduleExports[moduleName] = it
             }
-        } else throw NoSuchFileException(File(moduleName))
+        } else throw FileNotFoundException(moduleName)
     }
 
     suspend fun unload() {
