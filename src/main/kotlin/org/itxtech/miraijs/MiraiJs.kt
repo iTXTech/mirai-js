@@ -34,7 +34,7 @@ import net.mamoe.mirai.console.util.ConsoleExperimentalApi
 import org.itxtech.miraijs.libs.PrimitivePluginData
 
 object MiraiJs : KotlinPlugin(
-    JvmPluginDescriptionBuilder("org.itxtech.miraijs.MiraiJs", "2.0-M1")
+    JvmPluginDescriptionBuilder("org.itxtech.miraijs.MiraiJs", "2.0-RC")
         .id("org.itxtech.miraijs")
         .info("强大的 Mirai JavaScript 插件运行时。")
         .author("iTX Technologies")

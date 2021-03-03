@@ -24,9 +24,9 @@ class ConsoleCommandLib(plugin: PluginScope) : PluginLib(plugin) {
     fun register(
         name: String, desc: String = "MiraiJS plugin ${pluginScope.name} registered command: $name",
         usage: String = "<No usage description>", prefixOptional: Boolean = false,
-        alias: List<String> = listOf(), permission: Permission = RootCommandOwner.parentPermission,
-        override: Boolean = false, callback: KtLambdaInterfaceBridge.DoubleArgument<CommandSender, MessageChain, Unit>
-    ) = JSCommand(name, alias, desc, usage, prefixOptional, permission, callback).also {
+        permission: Permission = RootCommandOwner.parentPermission, override: Boolean = false,
+        callback: KtLambdaInterfaceBridge.DoubleArgument<CommandSender, MessageChain, Unit>
+    ) = JSCommand(name, desc, usage, prefixOptional, permission, callback).also {
         pluginScope.registeredCommands.add(it)
         it.register(override)
     }
@@ -44,7 +44,6 @@ class ConsoleCommandLib(plugin: PluginScope) : PluginLib(plugin) {
 
 class JSCommand(
     name: String,
-    alias: List<String>,
     desc: String,
     usage: String,
     prefixOptional: Boolean,
@@ -53,7 +52,6 @@ class JSCommand(
 ) : RawCommand(
     owner = RootCommandOwner,
     primaryName = name,
-    secondaryNames = alias.toTypedArray(),
     description = desc,
     usage = usage,
     prefixOptional = prefixOptional,

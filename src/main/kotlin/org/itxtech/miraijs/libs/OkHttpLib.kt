@@ -100,8 +100,6 @@ class OkHttpLib(plugin: PluginScope) : PluginLib(plugin) {
                     }
                     return r.build();
                 }
-                
-                http.okhttp = Packages.okhttp3
 
                 function parseMultipart(files) {
                     var builder = new MultipartBody.Builder()

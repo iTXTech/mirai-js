@@ -4,7 +4,6 @@ import org.itxtech.miraijs.MiraiJs
 import org.itxtech.miraijs.PluginLib
 import org.itxtech.miraijs.PluginScope
 import org.mozilla.javascript.*
-import org.mozilla.javascript.annotations.JSGetter
 import java.io.File
 import java.io.FileNotFoundException
 import java.net.URLClassLoader
