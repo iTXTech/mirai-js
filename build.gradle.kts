@@ -1,14 +1,16 @@
 plugins {
-    kotlin("jvm") version "1.4.21"
-    kotlin("plugin.serialization") version "1.4.21"
+    kotlin("jvm") version "1.4.30"
+    kotlin("plugin.serialization") version "1.4.30"
     id("com.jfrog.bintray") version "1.8.5"
     `maven-publish`
-    id("net.mamoe.mirai-console") version "2.0-M2"
+    id("net.mamoe.mirai-console") version "2.3.2"
+    id("net.mamoe.kotlin-jvm-blocking-bridge") version "1.10.0"
 }
 
 group = "org.itxtech"
-version = "1.2.1"
+version = "2.0-RC"
 description = "强大的 Mirai JavaScript 插件运行时"
+
 val vcs = "https://github.com/iTXTech/mirai-js"
 
 kotlin {
@@ -28,10 +30,19 @@ repositories {
 }
 
 dependencies {
+    testImplementation(kotlin("test-junit5"))
+    testImplementation("org.junit.jupiter:junit-jupiter-api:5.6.0")
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.6.0")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.0.1")
-
     implementation("org.mozilla:rhino:1.7.13")
     implementation("com.squareup.okhttp3:okhttp:4.9.0")
+}
+
+tasks.test {
+    useJUnitPlatform()
+    testLogging {
+        events("passed", "skipped", "failed")
+    }
 }
 
 tasks.named<Jar>("jar") {
@@ -56,6 +67,7 @@ tasks.named<Jar>("jar") {
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
     kotlinOptions.jvmTarget = "1.8"
+    kotlinOptions.useIR = true
 }
 
 bintray {

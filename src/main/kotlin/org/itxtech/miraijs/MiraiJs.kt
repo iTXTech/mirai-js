@@ -24,30 +24,39 @@
 
 package org.itxtech.miraijs
 
+import kotlinx.coroutines.launch
+import net.mamoe.mirai.console.command.CommandManager.INSTANCE.register
 import net.mamoe.mirai.console.extension.PluginComponentStorage
+import net.mamoe.mirai.console.extensions.PluginLoaderProvider
 import net.mamoe.mirai.console.plugin.jvm.JvmPluginDescriptionBuilder
 import net.mamoe.mirai.console.plugin.jvm.KotlinPlugin
-import org.itxtech.miraijs.plugin.PluginManager
+import net.mamoe.mirai.console.util.ConsoleExperimentalApi
+import org.itxtech.miraijs.libs.PrimitivePluginData
 
 object MiraiJs : KotlinPlugin(
-    JvmPluginDescriptionBuilder("MiraiJs", "1.2.1")
+    JvmPluginDescriptionBuilder("org.itxtech.miraijs.MiraiJs", "2.0-RC")
         .id("org.itxtech.miraijs")
         .info("强大的 Mirai JavaScript 插件运行时。")
         .author("iTX Technologies")
         .build()
 ) {
-    private val manager = PluginManager()
 
+    @ConsoleExperimentalApi
     override fun PluginComponentStorage.onLoad() {
-        manager.loadPlugins()
-        manager.registerCommand()
+        JpmCommand.register()
+        PluginManager.loadPlugins()
     }
 
     override fun onEnable() {
-        manager.enablePlugins()
+        MiraiJs.launch {
+            PluginManager.waitLoadPluginsJobs()
+            PluginManager.executePlugins()
+        }
     }
 
+    fun <T> withConsolePluginContext(block: KotlinPlugin.() -> T) = block(this)
+
     override fun onDisable() {
-        manager.disablePlugins()
+
     }
 }
