@@ -264,3 +264,7 @@ I/org.itxtech.miraijs.MiraiJs: [TestPlugin] 114514.0
 I/org.itxtech.miraijs.MiraiJs: [TestPlugin] 114514.0
 ```
 
+#### 不可阻塞
+
+模块 JS 文件的根命名域不可无限阻塞(如循环执行)，否则模块调用者将也会阻塞。
+

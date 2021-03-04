@@ -2,7 +2,7 @@
 
 **运行于 `JVM` 的强大的 `Mirai JavaScript` 插件运行时**
 
-使用 JavaScript 编写 [Mirai](https://github.com/mamoe/mirai) 插件，支持与所有 Mirai 面向 Java 的API 和部分 Kotlin DSL，[暂不支持]()`Android`环境。
+使用 JavaScript 编写 [Mirai](https://github.com/mamoe/mirai) 插件，支持与所有 Mirai 面向 Java 的API 和部分 Kotlin DSL，[暂不支持](#Android-兼容性) `Android` 环境。
 
 ## 使用须知
 
@@ -35,6 +35,12 @@
 查看开发文档：[docs/general.md](docs/general.md)
 
 查看 API 文档：<未完成>
+
+## Android 兼容性
+
+插件的 `ExternalLibraryLib` 中提供了加载外部 jar 功能，使用了 Android 不支持的 `URLClassLoader`。
+
+后续将会兼容 Android ： 使用 [D8](https://developer.android.google.cn/studio/command-line/d8) 将 Java 字节码编译为 Dex 字节码后使用 `DexClassLoader` 加载。
 
 ## 开源协议
 
