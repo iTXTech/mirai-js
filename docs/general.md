@@ -78,7 +78,8 @@ import net.mamoe.mirai.event.events.BotOnlineEvent;
 public class MiraiJava {
     public static Bot bot = null;
     public static void main() {
-        Listener<BotOnlineEvent> listener = GlobalEventChannel.INSTANCE.subscribeAlways(					BotOnlineEvent.class, (event) -> {
+        Listener<BotOnlineEvent> listener = GlobalEventChannel.INSTANCE.subscribeAlways(
+            BotOnlineEvent.class, (event) -> {
             	System.out.println("Bot " + event.getBot() + " is now online!");
             	bot = event.getBot();
         	}
@@ -99,7 +100,7 @@ Mirai Js 支持热加载/卸载，在控制台输入 `/jpm unload <插件 ID>` �
 
 * 使用 `coroutine.isCancelled()` 来获取 `isUnloadFlag` 状态，当为 `true` 时，插件**应该执行卸载动作**或**使插件自然完成执行**。
 
-*  在调用卸载命令后，所有在插件中启动的 Kotlin 协程会执行 `cancel()` 来取消协程的执行并等待执行结束。
+*  在调用卸载命令后，所有在插件中启动的 Kotlin 协程会取消执行并等待执行结束。
 
   > 在插件中启动的协程默认都是 [`pluginParentJob`](https://github.com/iTXTech/mirai-js/blob/master/src/main/kotlin/org/itxtech/miraijs/PluginScope.kt#L19) 的子协程。
 
@@ -119,9 +120,7 @@ Mirai Js 支持热加载/卸载，在控制台输入 `/jpm unload <插件 ID>` �
   });
   ```
 
-* 协程 / 线程。
-
-  为线程或根命名域中执行的循环操作添加插件终止判断。
+* 线程：为线程或根命名域中执行的循环操作添加插件终止判断。
 
   ```javascript
   importClass(java.lang.Thread);
@@ -137,10 +136,9 @@ Mirai Js 支持热加载/卸载，在控制台输入 `/jpm unload <插件 ID>` �
   }));
   thread.start();
   ```
-```
-  
-为协程执行的循环操作添加协程终止判断。
-  
+
+* 协程：为协程执行的循环操作添加协程终止判断。
+
   ```javascript
   let job = coroutine.launch((coroutineScope) => {
       while(otherConditions() && job.isCancelled()) {
@@ -148,7 +146,7 @@ Mirai Js 支持热加载/卸载，在控制台输入 `/jpm unload <插件 ID>` �
       }
       cleanup();
   });
-```
+  ```
 
 ### 3. 多文件
 
@@ -183,9 +181,9 @@ module.exports = {
 
 控制台：
 
-```
+  ```
 I/org.itxtech.miraijs.MiraiJs: [TestPlugin] Hello LiHua. Nice to meet you!
-```
+  ```
 
 模块嵌套也是允许的，你可以在一个模块中引用其他模块。
 
@@ -225,6 +223,7 @@ let job = coroutine.launch((coroutineScope) => {
 
 module.exports = coroutineStatus;
 ```
+
 
 控制台：
 
