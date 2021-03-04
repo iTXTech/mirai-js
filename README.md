@@ -30,9 +30,15 @@
 * 在 `data/org.itxtech.miraijs.MiraiJs/plugins` 下放入 `zip` 格式的 Mirai Js 插件。
 * 在 mirai console 输入 `/jpm load <文件名>` (不需要加 `.zip`) 来加载这个插件。
 
+## 开发
+
+查看开发文档：[docs/general.md](docs/general.md)
+
+查看 API 文档：<未完成>
+
 ## 开源协议
 
-    Copyright (C) 2020 iTX Technologies
+    Copyright (C) 2020-2021 iTX Technologies
     
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as
@@ -45,4 +51,4 @@
     GNU Affero General Public License for more details.
     
     You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.xxxxxxxxxx Copyright (C) 2020 iTX TechnologiesThis program is free software: you can redistribute it and/or modifyit under the terms of the GNU Affero General Public License aspublished by the Free Software Foundation, either version 3 of theLicense, or (at your option) any later version.This program is distributed in the hope that it will be useful,but WITHOUT ANY WARRANTY; without even the implied warranty ofMERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See theGNU Affero General Public License for more details.You should have received a copy of the GNU Affero General Public Licensealong with this program.  If not, see <http://www.gnu.org/licenses/>.
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
