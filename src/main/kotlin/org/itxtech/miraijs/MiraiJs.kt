@@ -43,11 +43,12 @@ object MiraiJs : KotlinPlugin(
 
     @ConsoleExperimentalApi
     override fun PluginComponentStorage.onLoad() {
-        JpmCommand.register()
         PluginManager.loadPlugins()
     }
 
+    @OptIn(ConsoleExperimentalApi::class)
     override fun onEnable() {
+        JpmCommand.register()
         MiraiJs.launch {
             PluginManager.waitLoadPluginsJobs()
             PluginManager.executePlugins()

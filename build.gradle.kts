@@ -3,12 +3,12 @@ plugins {
     kotlin("plugin.serialization") version "1.4.30"
     id("com.jfrog.bintray") version "1.8.5"
     `maven-publish`
-    id("net.mamoe.mirai-console") version "2.4.0"
+    id("net.mamoe.mirai-console") version "2.7-M1"
     id("net.mamoe.kotlin-jvm-blocking-bridge") version "1.10.0"
 }
 
 group = "org.itxtech"
-version = "2.0-RC"
+version = "2.0-RC-dev1"
 description = "强大的 Mirai JavaScript 插件运行时"
 
 val vcs = "https://github.com/iTXTech/mirai-js"
