@@ -8,7 +8,7 @@
 
 ```tree
 myplugin.zip
-├─── plugins  <---- 存放 JavaScript 插件主体。
+├─── scripts  <---- 存放 JavaScript 插件主体。
 │   ├─── main.js  <---- 主脚本。
 │   ├─── other1.js <---- 其他脚本模块。
 │   └─── other2.js   <---- 其他脚本模块。
@@ -21,7 +21,7 @@ myplugin.zip
 └─── config.json <---- 插件信息。
 ```
 
-请注意：`plugins` 一定存在 `main.js` 脚本，否则这个插件将无法被加载。
+请注意：`scripts` 一定存在 `main.js` 脚本，否则这个插件将无法被加载。
 
 ### `config.json` 结构
 
@@ -150,7 +150,7 @@ Mirai Js 支持热加载/卸载，在控制台输入 `/jpm unload <插件 ID>` �
 
 ### 3. 多文件
 
-在插件目录中的 `plugins` 文件夹下，允许存在多个文件。加载插件时，会先编译所有的 JS 文件，然后加载 `main.js`。
+在插件目录中的 `scripts` 文件夹下，允许存在多个文件。加载插件时，会先编译所有的 JS 文件，然后加载 `main.js`。
 
 除了 `main.js`，其他 JS 文件会被当做 **模块**(module)，只有在使用它们时才会加载运行。
 
