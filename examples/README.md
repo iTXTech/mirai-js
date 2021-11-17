@@ -6,7 +6,7 @@
 
 ```
 myplugin.zip
-├─── plugins  <---- 存放 JavaScript 插件主体。
+├─── scripts  <---- 存放 JavaScript 插件主体。
 │   ├─── main.js  <---- 主脚本，若存在则先加载 main.js，再加载其他脚本。
 │   ├─── other1.js  <---- 其他脚本。
 │   └─── other2.js  <---- 其他脚本。
