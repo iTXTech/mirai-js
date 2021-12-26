@@ -1,14 +1,14 @@
 plugins {
-    kotlin("jvm") version "1.4.30"
-    kotlin("plugin.serialization") version "1.4.30"
+    kotlin("jvm") version "1.5.30"
+    kotlin("plugin.serialization") version "1.5.30"
     id("com.jfrog.bintray") version "1.8.5"
     `maven-publish`
-    id("net.mamoe.mirai-console") version "2.7-M1"
-    id("net.mamoe.kotlin-jvm-blocking-bridge") version "1.10.0"
+    id("net.mamoe.mirai-console") version "2.8.0"
+    id("net.mamoe.kotlin-jvm-blocking-bridge") version "1.10.6-1530.2"
 }
 
 group = "org.itxtech"
-version = "2.0-RC-dev1"
+version = "2.0-RC-dev2"
 description = "强大的 Mirai JavaScript 插件运行时"
 
 val vcs = "https://github.com/iTXTech/mirai-js"
@@ -17,16 +17,17 @@ kotlin {
     sourceSets {
         all {
             languageSettings.enableLanguageFeature("InlineClasses")
-            languageSettings.useExperimentalAnnotation("kotlin.Experimental")
+            languageSettings.optIn("kotlin.RequiresOptIn")
+            languageSettings.optIn("kotlin.Experimental")
         }
     }
 }
 
 repositories {
-    maven("https://dl.bintray.com/him188moe/mirai")
-    maven("https://dl.bintray.com/mamoe/kotlin-jvm-blocking-bridge")
     maven("https://maven.aliyun.com/repository/public")
-    maven("https://dl.bintray.com/kotlin/kotlin-eap")
+    mavenLocal()
+    mavenCentral()
+    gradlePluginPortal()
 }
 
 dependencies {
@@ -66,8 +67,7 @@ tasks.named<Jar>("jar") {
 }
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-    kotlinOptions.jvmTarget = "1.8"
-    kotlinOptions.useIR = true
+    kotlinOptions.jvmTarget = "11"
 }
 
 bintray {
