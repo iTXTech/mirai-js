@@ -42,6 +42,15 @@
 
 后续将会兼容 Android ： 使用 [D8](https://developer.android.google.cn/studio/command-line/d8) 将 Java 字节码编译为 Dex 字节码后使用 `DexClassLoader` 加载。
 
+## [mirai-console-loader](https://github.com/iTXTech/mirai-console-loader) 兼容性
+
+使用 mirai-console-loader 启动 mirai 时，脚本环境无法找到 `net.mamoe.mirai` 包，请使用原始方式启动：
+```
+java -cp "./libs/*" net.mamoe.mirai.console.terminal.MiraiConsoleTerminalLoader
+```
+
+详见：[#10](https://github.com/iTXTech/mirai-js/issues/10)
+
 ## 开源协议
 
     Copyright (C) 2020-2021 iTX Technologies
