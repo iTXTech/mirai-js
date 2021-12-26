@@ -1,6 +1,5 @@
 package org.itxtech.miraijs.libs
 
-import io.ktor.utils.io.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import net.mamoe.kjbb.JvmBlockingBridge

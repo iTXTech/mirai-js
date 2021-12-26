@@ -49,27 +49,27 @@ object PluginManager {
     fun loadPlugin(file: File) {
         MiraiJs.launch(loadPluginDispatcher) { loadPluginsLock.withLock {
             try {
-                val `package` = PluginPackage(file)
-                if (plugins.filter { it.identify == `package`.config!!.id }.count() != 0) {
-                    MiraiJs.logger.error("Conflict to load ${`package`.config!!.name}(${`package`.config!!.id}): already loaded.")
-                    withContext(resourceDispatcher) { `package`.closeAndRelease() }
-                } else if(!`package`.hasMainScript()) {
-                    MiraiJs.logger.error("Plugin ${`package`.config!!.name}(${`package`.config!!.id}) doesn't have main script.")
-                    withContext(resourceDispatcher) { `package`.closeAndRelease() }
+                val pkg = PluginPackage(file)
+                if (plugins.any { it.identify == pkg.config!!.id }) {
+                    MiraiJs.logger.error("Conflict to load ${pkg.config!!.name}(${pkg.config!!.id}): already loaded.")
+                    withContext(resourceDispatcher) { pkg.closeAndRelease() }
+                } else if(!pkg.hasMainScript()) {
+                    MiraiJs.logger.error("Plugin ${pkg.config!!.name}(${pkg.config!!.id}) doesn't have main script.")
+                    withContext(resourceDispatcher) { pkg.closeAndRelease() }
                 } else {
-                    MiraiJs.logger.info("Loading ${`package`.config!!.name}.")
-                    val scope = PluginScope(`package`.config!!.id).also {
+                    MiraiJs.logger.info("Loading ${pkg.config!!.name}.")
+                    val scope = PluginScope(pkg.config!!.id).also {
                         it.init()
                     }
                     withContext(resourceDispatcher) {
-                        `package`.extractResources(
-                            File(pluginData.absolutePath + File.separatorChar + `package`.config!!.id)
+                        pkg.extractResources(
+                            File(pluginData.absolutePath + File.separatorChar + pkg.config!!.id)
                         )
-                        `package`.consumeScriptReaders {
+                        pkg.consumeScriptReaders {
                             scope.attachScript(it, this)
                         }
                     }
-                    plugins.add(PluginInfo(`package`.config!!.id, `package`, scope))
+                    plugins.add(PluginInfo(pkg.config!!.id, pkg, scope))
                 }
             } catch (ex: Exception) {
                 MiraiJs.logger.error("Error while loading ${file.name}: $ex")

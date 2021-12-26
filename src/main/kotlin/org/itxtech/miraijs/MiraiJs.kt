@@ -27,21 +27,18 @@ package org.itxtech.miraijs
 import kotlinx.coroutines.launch
 import net.mamoe.mirai.console.command.CommandManager.INSTANCE.register
 import net.mamoe.mirai.console.extension.PluginComponentStorage
-import net.mamoe.mirai.console.extensions.PluginLoaderProvider
 import net.mamoe.mirai.console.plugin.jvm.JvmPluginDescriptionBuilder
 import net.mamoe.mirai.console.plugin.jvm.KotlinPlugin
 import net.mamoe.mirai.console.util.ConsoleExperimentalApi
-import org.itxtech.miraijs.libs.PrimitivePluginData
 
 object MiraiJs : KotlinPlugin(
-    JvmPluginDescriptionBuilder("org.itxtech.miraijs.MiraiJs", "2.0-RC")
+    JvmPluginDescriptionBuilder("org.itxtech.miraijs.MiraiJs", "2.0-RC-dev2")
         .id("org.itxtech.miraijs")
         .info("强大的 Mirai JavaScript 插件运行时。")
         .author("iTX Technologies")
         .build()
 ) {
 
-    @ConsoleExperimentalApi
     override fun PluginComponentStorage.onLoad() {
         PluginManager.loadPlugins()
     }

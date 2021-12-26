@@ -1,9 +1,12 @@
 package org.itxtech.miraijs.libs
 
+import com.stardust.autojs.core.http.MutableOkHttp
 import org.itxtech.miraijs.PluginLib
 import org.itxtech.miraijs.PluginScope
 import org.mozilla.javascript.Context
+import org.mozilla.javascript.NativeJavaClass
 import org.mozilla.javascript.Scriptable
+import org.mozilla.javascript.ScriptableObject
 
 class OkHttpLib(plugin: PluginScope) : PluginLib(plugin) {
     @JvmSynthetic
@@ -11,6 +14,7 @@ class OkHttpLib(plugin: PluginScope) : PluginLib(plugin) {
 
     @JvmSynthetic
     override fun importTo(scope: Scriptable, context: Context) {
+        ScriptableObject.putProperty(scope, "__MutableOkHttp__", NativeJavaClass(scope, MutableOkHttp::class.java))
         context.evaluateString(
             scope, """
             /*
@@ -24,10 +28,9 @@ class OkHttpLib(plugin: PluginScope) : PluginLib(plugin) {
              */
             const $nameInJs = (function() {
                 importPackage(Packages["okhttp3"]);
-                importClass(com.stardust.autojs.core.http.MutableOkHttp);
                 var http = {};
 
-                http.__okhttp__ = new MutableOkHttp();
+                http.__okhttp__ = new __MutableOkHttp__();
 
                 http.get = function (url, options, callback) {
                     options = options || {};
