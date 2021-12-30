@@ -36,21 +36,20 @@ var repeatWhen = 3;
 //}
 var records = [];
 
-var listener = mirai.event.GlobalEventChannel.INSTANCE.subscribeAlways(
-    mirai.event.events.GroupMessageEvent, (event) => {
+var listener = net.mamoe.mirai.event.GlobalEventChannel.INSTANCE.subscribeAlways(
+    net.mamoe.mirai.event.events.GroupMessageEvent, (event) => {
         var chain = event.getMessage();
         var groupId = event.getGroup().getId();
         //当只有文本消息时
         if (chain.size() == 2 &&
             chain.stream().anyMatch((sm) => {
-                return sm instanceof mirai.message.data.PlainText;
+                return sm instanceof net.mamoe.mirai.message.data.PlainText;
             })
         ) {
             //获取文本消息字符串
             var content = chain.stream().filter((sm) => {
-                return sm instanceof mirai.message.data.PlainText;
+                return sm instanceof net.mamoe.mirai.message.data.PlainText;
             }).findFirst().orElse(null).getContent().toString();
-
             for (var i in records) {
                 if (records[i].group == groupId) {
                     if (records[i].content == content) {
